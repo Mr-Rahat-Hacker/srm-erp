@@ -57,10 +57,10 @@ public class AuditSearchService {
                 INSERT INTO srm.audit_event
                     (actor_user_id, actor_type, effective_roles, action_code, entity_type,
                      outcome, changed_fields)
-                VALUES (?, 'USER', ?, 'AUDIT_SEARCH', 'AUDIT_EVENT', 'SUCCESS',
+                VALUES (?, 'USER', string_to_array(?, ','), 'AUDIT_SEARCH', 'AUDIT_EVENT', 'SUCCESS',
                         jsonb_build_object('action', ?, 'entityType', ?, 'rfqId', ?,
                                            'targetActor', ?, 'from', ?, 'to', ?, 'resultCount', ?))
-                """, actorId, roles.toArray(String[]::new), blankToNull(action),
+                """, actorId, String.join(",", roles), blankToNull(action),
                 blankToNull(entityType), rfqId, targetActor, from, to, events.size());
         return events;
     }
