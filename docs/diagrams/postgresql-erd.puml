@@ -1,0 +1,329 @@
+@startuml
+title SRM Platform - Logical PostgreSQL ER Diagram
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  FontColor #0F172A
+}
+skinparam ArrowColor #475569
+
+entity "app_user" as app_user {
+  * user_id : UUID <<PK>>
+  --
+  email : VARCHAR(254) <<UQ>>
+  password_hash : VARCHAR(255)
+  full_name : VARCHAR(160)
+  account_status : VARCHAR(30)
+  created_at : TIMESTAMPTZ
+}
+
+entity "role" as role {
+  * role_id : UUID <<PK>>
+  --
+  role_code : VARCHAR(40) <<UQ>>
+  role_name : VARCHAR(100)
+}
+
+entity "user_role" as user_role {
+  * user_id : UUID <<PK,FK>>
+  * role_id : UUID <<PK,FK>>
+  --
+  assigned_by : UUID
+  assigned_at : TIMESTAMPTZ
+}
+
+entity "supplier_organization" as supplier {
+  * supplier_id : UUID <<PK>>
+  --
+  supplier_number : VARCHAR(30) <<UQ>>
+  legal_name : VARCHAR(200)
+  gstin : VARCHAR(20)
+  pan : VARCHAR(10)
+  lifecycle_status : VARCHAR(40)
+  created_at : TIMESTAMPTZ
+}
+
+entity "supplier_user_membership" as membership {
+  * supplier_id : UUID <<PK,FK>>
+  * user_id : UUID <<PK,FK>>
+  --
+  membership_status : VARCHAR(30)
+}
+
+entity "supplier_document" as document {
+  * document_id : UUID <<PK>>
+  --
+  supplier_id : UUID <<FK>>
+  document_type : VARCHAR(50)
+  storage_key : TEXT
+  review_status : VARCHAR(30)
+  uploaded_at : TIMESTAMPTZ
+}
+
+entity "supplier_review" as supplier_review {
+  * review_id : UUID <<PK>>
+  --
+  supplier_id : UUID <<FK>>
+  reviewer_user_id : UUID <<FK>>
+  review_stage : VARCHAR(40)
+  decision : VARCHAR(30)
+  remarks : TEXT
+  decided_at : TIMESTAMPTZ
+}
+
+entity "sap_vendor_mapping" as sap_mapping {
+  * mapping_id : UUID <<PK>>
+  --
+  supplier_id : UUID <<FK>>
+  sap_system_id : UUID
+  sap_vendor_code : VARCHAR(40)
+  is_active : BOOLEAN
+  mapped_at : TIMESTAMPTZ
+}
+
+entity "rfq" as rfq {
+  * rfq_id : UUID <<PK>>
+  --
+  rfq_number : VARCHAR(40) <<UQ>>
+  title : VARCHAR(200)
+  buyer_user_id : UUID <<FK>>
+  status : VARCHAR(40)
+  currency_code : CHAR(3)
+  submission_deadline : TIMESTAMPTZ
+  created_at : TIMESTAMPTZ
+}
+
+entity "rfq_line" as rfq_line {
+  * rfq_line_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  line_number : INTEGER
+  sap_material_code : VARCHAR(80)
+  description : TEXT
+  quantity : NUMERIC(18,4)
+  uom_code : VARCHAR(12)
+  plant_code : VARCHAR(20)
+}
+
+entity "rfq_invitation" as invitation {
+  * invitation_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  supplier_id : UUID <<FK>>
+  invitation_status : VARCHAR(30)
+  invited_at : TIMESTAMPTZ
+}
+
+entity "quotation" as quotation {
+  * quotation_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  supplier_id : UUID <<FK>>
+  current_version_id : UUID
+  lifecycle_status : VARCHAR(40)
+}
+
+entity "quotation_version" as qversion {
+  * quotation_version_id : UUID <<PK>>
+  --
+  quotation_id : UUID <<FK>>
+  version_number : INTEGER
+  submitted_at : TIMESTAMPTZ
+  version_status : VARCHAR(30)
+  currency_code : CHAR(3)
+  total_landed_cost : NUMERIC(18,2)
+}
+
+entity "quotation_line" as qline {
+  * quotation_line_id : UUID <<PK>>
+  --
+  quotation_version_id : UUID <<FK>>
+  rfq_line_id : UUID <<FK>>
+  basic_unit_price : NUMERIC(18,4)
+  discount_amount : NUMERIC(18,2)
+  net_unit_price : NUMERIC(18,4)
+  tax_amount : NUMERIC(18,2)
+  other_charges : NUMERIC(18,2)
+  landed_line_total : NUMERIC(18,2)
+}
+
+entity "evaluation" as evaluation {
+  * evaluation_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  supplier_id : UUID <<FK>>
+  quotation_version_id : UUID <<FK>>
+  technical_status : VARCHAR(40)
+  commercial_status : VARCHAR(40)
+  evaluator_user_id : UUID <<FK>>
+  evaluated_at : TIMESTAMPTZ
+}
+
+entity "negotiation_round" as negotiation {
+  * negotiation_round_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  supplier_id : UUID <<FK>>
+  round_number : INTEGER
+  status : VARCHAR(30)
+  opened_at : TIMESTAMPTZ
+  closed_at : TIMESTAMPTZ
+}
+
+entity "negotiation_message" as negotiation_message {
+  * message_id : UUID <<PK>>
+  --
+  negotiation_round_id : UUID <<FK>>
+  sender_user_id : UUID <<FK>>
+  message_type : VARCHAR(30)
+  message_text : TEXT
+  created_at : TIMESTAMPTZ
+}
+
+entity "approval_request" as approval {
+  * approval_request_id : UUID <<PK>>
+  --
+  entity_type : VARCHAR(40)
+  entity_id : UUID
+  workflow_code : VARCHAR(50)
+  status : VARCHAR(30)
+  requested_by : UUID <<FK>>
+  created_at : TIMESTAMPTZ
+}
+
+entity "approval_task" as approval_task {
+  * approval_task_id : UUID <<PK>>
+  --
+  approval_request_id : UUID <<FK>>
+  assigned_user_id : UUID <<FK>>
+  approval_stage : VARCHAR(50)
+  task_status : VARCHAR(30)
+  due_at : TIMESTAMPTZ
+}
+
+entity "approval_decision" as decision {
+  * decision_id : UUID <<PK>>
+  --
+  approval_task_id : UUID <<FK>>
+  actor_user_id : UUID <<FK>>
+  decision : VARCHAR(30)
+  remarks : TEXT
+  decided_at : TIMESTAMPTZ
+}
+
+entity "supplier_recommendation" as recommendation {
+  * recommendation_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  supplier_id : UUID <<FK>>
+  quotation_version_id : UUID <<FK>>
+  recommended_by : UUID <<FK>>
+  justification : TEXT
+  created_at : TIMESTAMPTZ
+}
+
+entity "award" as award {
+  * award_id : UUID <<PK>>
+  --
+  rfq_id : UUID <<FK>>
+  supplier_id : UUID <<FK>>
+  quotation_version_id : UUID <<FK>>
+  approval_request_id : UUID <<FK>>
+  award_status : VARCHAR(30)
+  approved_value : NUMERIC(18,2)
+  awarded_at : TIMESTAMPTZ
+}
+
+entity "notification" as notification {
+  * notification_id : UUID <<PK>>
+  --
+  recipient_user_id : UUID <<FK>>
+  event_type : VARCHAR(60)
+  delivery_status : VARCHAR(30)
+  created_at : TIMESTAMPTZ
+}
+
+entity "audit_event" as audit {
+  * audit_event_id : UUID <<PK>>
+  --
+  actor_user_id : UUID
+  actor_type : VARCHAR(30)
+  action_code : VARCHAR(80)
+  entity_type : VARCHAR(50)
+  entity_id : UUID
+  outcome : VARCHAR(20)
+  occurred_at : TIMESTAMPTZ
+  correlation_id : UUID
+}
+
+entity "sap_integration_event" as sap_event {
+  * integration_event_id : UUID <<PK>>
+  --
+  supplier_id : UUID <<FK>>
+  award_id : UUID <<FK>>
+  operation_type : VARCHAR(50)
+  status : VARCHAR(30)
+  external_reference : VARCHAR(100)
+  created_at : TIMESTAMPTZ
+}
+
+app_user ||--o{ user_role
+role ||--o{ user_role
+app_user ||--o{ membership
+supplier ||--o{ membership
+supplier ||--o{ document
+supplier ||--o{ supplier_review
+app_user ||--o{ supplier_review
+supplier ||--o{ sap_mapping
+app_user ||--o{ rfq : creates
+rfq ||--|{ rfq_line
+rfq ||--o{ invitation
+supplier ||--o{ invitation
+rfq ||--o{ quotation
+supplier ||--o{ quotation
+quotation ||--|{ qversion
+qversion ||--|{ qline
+rfq_line ||--o{ qline
+rfq ||--o{ evaluation
+supplier ||--o{ evaluation
+qversion ||--o{ evaluation
+app_user ||--o{ evaluation
+rfq ||--o{ negotiation
+supplier ||--o{ negotiation
+negotiation ||--o{ negotiation_message
+app_user ||--o{ negotiation_message
+approval ||--|{ approval_task
+approval_task ||--o{ decision
+app_user ||--o{ approval_task
+app_user ||--o{ decision
+rfq ||--o{ recommendation
+supplier ||--o{ recommendation
+qversion ||--o{ recommendation
+rfq ||--o{ award
+supplier ||--o{ award
+qversion ||--o{ award
+approval ||--o| award
+app_user ||--o{ notification
+supplier ||--o{ sap_event
+award ||--o{ sap_event
+
+note bottom of audit
+Append-only record. entity_type + entity_id is a polymorphic
+reference and intentionally has no direct FK to every business table.
+Audit retention and partitioning policy are deployment decisions.
+end note
+
+note right of sap_mapping
+Maps an existing SAP Vendor Code.
+SRM does not create SAP Vendor Master.
+Unique active mapping rules must be enforced.
+end note
+
+note bottom of rfq_line
+sap_material_code is a reference to SAP-owned data,
+not an SRM Material Master.
+end note
+@enduml
