@@ -51,13 +51,17 @@
       @if (rfq.quotationVersions.length === 0) {
         <p class="helper-text">No draft or submitted quotation versions yet.</p>
       } @else {
-        <div class="version-list">@for (version of rfq.quotationVersions; track version.quotationVersionId) {
-          <article class="version-card">
-            <div class="version-heading"><div><strong>Version {{ version.versionNumber }}</strong><span class="status-pill">{{ version.versionStatus }}</span></div>
-              <span>{{ version.submittedAt ? (version.submittedAt | date:'medium') : 'Not submitted' }}</span></div>
-            <p>Total landed cost: <strong>{{ version.totalLandedCost | number:'1.2-2' }} {{ version.currencyCode }}</strong></p>
-          </article>
-        }}</div>
+        <div class="version-list">
+          @for (version of rfq.quotationVersions; track version.quotationVersionId) {
+            <article class="version-card">
+              <div class="version-heading">
+                <div><strong>Version {{ version.versionNumber }}</strong><span class="status-pill">{{ version.versionStatus }}</span></div>
+                <span>{{ version.submittedAt ? (version.submittedAt | date:'medium') : 'Not submitted' }}</span>
+              </div>
+              <p>Total landed cost: <strong>{{ version.totalLandedCost | number:'1.2-2' }} {{ version.currencyCode }}</strong></p>
+            </article>
+          }
+        </div>
       }
 
       <form #quoteForm="ngForm" (ngSubmit)="saveDraft()">
