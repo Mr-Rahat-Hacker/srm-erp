@@ -1,0 +1,47 @@
+<section class="page-heading">
+  <span class="eyebrow">GOVERNANCE</span>
+  <h1>Audit trail</h1>
+  <p>Search immutable business and security events within your access scope.</p>
+</section>
+
+@if (error) { <div class="notice error" role="alert">{{ error }}</div> }
+
+<form class="filters" (ngSubmit)="search()">
+  <label>Action contains<input name="action" [(ngModel)]="action" placeholder="RFQ_AWARDED"></label>
+  <label>Entity type<input name="entityType" [(ngModel)]="entityType" placeholder="RFQ"></label>
+  <label>RFQ ID<input name="rfqId" [(ngModel)]="rfqId" placeholder="UUID"></label>
+  <label>Actor ID<input name="actorUserId" [(ngModel)]="actorUserId" placeholder="UUID"></label>
+  <label>From<input name="from" type="datetime-local" [(ngModel)]="from"></label>
+  <label>To<input name="to" type="datetime-local" [(ngModel)]="to"></label>
+  <button type="submit" [disabled]="loading">{{ loading ? 'Searching…' : 'Search events' }}</button>
+</form>
+
+<section class="results">
+  <header><h2>Events</h2><span>Showing up to 100 most recent matching records</span></header>
+  @if (loading) {
+    <p class="empty">Loading audit events…</p>
+  } @else if (!events.length) {
+    <p class="empty">No events match these filters.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time (UTC)</th><th>Action</th><th>Actor</th><th>Entity</th><th>RFQ / Supplier</th><th>Outcome & detail</th></tr></thead>
+        <tbody>
+          @for (event of events; track event.eventId) {
+            <tr>
+              <td>{{ event.occurredAt | date:'medium':'UTC' }}</td>
+              <td><strong>{{ event.actionCode }}</strong><small>{{ event.effectiveRoles || 'No role snapshot' }}</small></td>
+              <td>{{ event.actorName || event.actorUserId || 'System' }}</td>
+              <td>{{ event.entityType }}<small>{{ event.entityId || '—' }}</small></td>
+              <td>{{ event.rfqNumber || event.rfqId || '—' }}<small>{{ event.supplierName || event.supplierId || '' }}</small></td>
+              <td><strong>{{ event.outcome }}</strong>
+                @if (event.reason) { <small>{{ event.reason }}</small> }
+                @if (event.changedFields) { <details><summary>Changed fields</summary><pre>{{ event.changedFields }}</pre></details> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
