@@ -19,3 +19,24 @@ export interface ApprovalTask {
   createdAt: string;
   dueAt: string | null;
 }
+
+export interface EligibleApprover {
+  userId: string;
+  fullName: string;
+  email: string;
+}
+
+export interface AwardRecord {
+  awardId: string;
+  rfqId: string;
+  rfqNumber: string;
+  supplierId: string;
+  supplierName: string;
+  quotationVersionId: string;
+  versionNumber: number;
+  approvalRequestId: string;
+  approvedValue: number;
+  currencyCode: string;
+  status: string;
+  awardedAt: string;
+}
