@@ -74,8 +74,17 @@ public class AwardApprovalService {
                 JOIN srm.supplier_organization s ON s.supplier_id = sr.supplier_id
                 JOIN srm.quotation_version v ON v.quotation_version_id = sr.quotation_version_id
                 WHERE sr.recommendation_id = ? AND sr.rfq_id = ?
+                FOR UPDATE OF sr
                 """, rs -> rs.next() ? mapRecommendation(rs) : null, request.recommendationId(), rfqId);
         if (recommendation == null) throw new ResponseStatusException(NOT_FOUND, "Recommendation not found");
+        Boolean pending = jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM srm.approval_request
+                    WHERE entity_type = 'AWARD' AND entity_id = ? AND status = 'PENDING')
+                """, Boolean.class, recommendation.id());
+        if (Boolean.TRUE.equals(pending)) {
+            throw new ResponseStatusException(CONFLICT, "This recommendation already has a pending approval request");
+        }
         if (recommendation.recommenderId().equals(request.approverUserId())) {
             throw new ResponseStatusException(BAD_REQUEST, "The recommender cannot approve the same award");
         }
@@ -138,9 +147,8 @@ public class AwardApprovalService {
         if (!DECISIONS.contains(decision)) {
             throw new ResponseStatusException(BAD_REQUEST, "Decision must be APPROVE, REJECT or RETURN_FOR_REVISION");
         }
-        if (decision.equals("RETURN_FOR_REVISION")
-                && (request.comments() == null || request.comments().isBlank())) {
-            throw new ResponseStatusException(BAD_REQUEST, "Add comments when returning the recommendation for revision");
+        if (request.comments() == null || request.comments().isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Add comments before recording an approval decision");
         }
         ApprovalTaskRecord task = jdbc.query("""
                 SELECT ar.approval_request_id, at.approval_task_id, r.rfq_id, r.rfq_number, r.title,
