@@ -7,6 +7,7 @@ import { QuotationComparisonComponent } from './features/quotations/quotation-co
 import { BuyerNegotiationsComponent } from './features/negotiations/buyer-negotiations.component';
 import { SupplierNegotiationsComponent } from './features/negotiations/supplier-negotiations.component';
 import { EvaluationsComponent } from './features/evaluations/evaluations.component';
+import { ApprovalsComponent } from './features/approvals/approvals.component';
 import { ModulePlaceholderComponent } from './shared/components/module-placeholder/module-placeholder.component';
 import { LoginComponent } from './features/auth/login.component';
 import { authGuard } from './core/auth/auth.guard';
@@ -22,7 +23,7 @@ export const routes: Routes = [
   { path: 'quotations', component: QuotationComparisonComponent, canActivate: [authGuard] },
   { path: 'negotiations', component: BuyerNegotiationsComponent, canActivate: [authGuard] },
   { path: 'evaluations', component: EvaluationsComponent, canActivate: [authGuard] },
-  { path: 'approvals', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'Approvals', description: 'Review assigned supplier, sourcing and award approval tasks.', status: 'Planned module' } },
+  { path: 'approvals', component: ApprovalsComponent, canActivate: [authGuard] },
   { path: 'reports', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'Reports & Audit', description: 'Explore SRM activity, workflow history and audit records.', status: 'Planned module' } },
   { path: '**', redirectTo: 'dashboard' },
 ];
