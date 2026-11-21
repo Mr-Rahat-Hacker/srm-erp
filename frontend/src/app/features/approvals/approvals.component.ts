@@ -1,12 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApprovalService } from './approval.service';
 import { ApprovalReviewContext, ApprovalTask } from './approval.models';
 
 @Component({
   selector: 'app-approvals',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, DecimalPipe, FormsModule],
   templateUrl: './approvals.component.html',
   styleUrl: './approvals.component.scss',
 })
