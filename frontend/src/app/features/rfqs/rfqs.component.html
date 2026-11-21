@@ -1,0 +1,203 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SRM WORKSPACE / SOURCING</span>
+    <h1>RFQ management</h1>
+    <p>Create sourcing events with SAP material references and invite qualified suppliers.</p>
+  </div>
+  <div class="heading-actions">
+    <button class="secondary-button" type="button" (click)="loadRfqs()" [disabled]="loading">Refresh</button>
+    <button class="primary-button" type="button" (click)="showCreateForm = !showCreateForm">
+      {{ showCreateForm ? 'Close form' : '+ Create RFQ' }}
+    </button>
+  </div>
+</div>
+
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+
+@if (showCreateForm) {
+  <section class="form-card">
+    <div class="card-heading">
+      <div><h2>New request for quotation</h2><p>Create a draft, add qualified suppliers, then publish it.</p></div>
+      <span class="status-pill">DRAFT</span>
+    </div>
+    <form #rfqForm="ngForm" (ngSubmit)="createRfq()">
+      <div class="form-grid">
+        <label class="wide">RFQ title <span>*</span>
+          <input name="title" [(ngModel)]="form.title" required maxlength="200" placeholder="e.g. Steel mounting bracket sourcing">
+        </label>
+        <label class="wide">Scope / description
+          <textarea name="description" [(ngModel)]="form.description" rows="2" maxlength="10000" placeholder="Describe the sourcing requirement"></textarea>
+        </label>
+        <label>Currency <span>*</span>
+          <select name="currencyCode" [(ngModel)]="form.currencyCode" required>
+            <option value="INR">INR</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option>
+          </select>
+        </label>
+        <label>Submission deadline <span>*</span>
+          <input name="submissionDeadline" type="datetime-local" [(ngModel)]="form.submissionDeadline" required>
+        </label>
+        <label>Required delivery date
+          <input name="requiredDeliveryDate" type="date" [(ngModel)]="form.requiredDeliveryDate">
+        </label>
+        <label>Project code
+          <input name="projectCode" [(ngModel)]="form.projectCode" maxlength="60">
+        </label>
+        <label>Department
+          <input name="department" [(ngModel)]="form.department" maxlength="100">
+        </label>
+        <label>Plant code
+          <input name="plantCode" [(ngModel)]="form.plantCode" maxlength="30">
+        </label>
+        <label>Purchasing group
+          <input name="purchasingGroup" [(ngModel)]="form.purchasingGroup" maxlength="30">
+        </label>
+        <label>Incoterms
+          <input name="incoterms" [(ngModel)]="form.incoterms" maxlength="20" placeholder="e.g. DAP">
+        </label>
+        <label class="wide">Payment terms
+          <textarea name="paymentTerms" [(ngModel)]="form.paymentTerms" rows="2" maxlength="4000"></textarea>
+        </label>
+      </div>
+
+      <div class="lines-heading">
+        <div><h3>RFQ line items</h3><p>Use existing SAP Material Codes. SRM does not create material records.</p></div>
+        <button class="secondary-button" type="button" (click)="addLine()">+ Add line</button>
+      </div>
+      @for (line of lines; track $index; let i = $index) {
+        <fieldset class="line-card">
+          <legend>Line {{ i + 1 }}</legend>
+          <div class="form-grid">
+            <label>SAP material code <span>*</span>
+              <input [name]="'materialCode-' + i" [(ngModel)]="line.sapMaterialCode" required maxlength="80">
+            </label>
+            <label>Description <span>*</span>
+              <input [name]="'lineDescription-' + i" [(ngModel)]="line.description" required maxlength="2000">
+            </label>
+            <label>Quantity <span>*</span>
+              <input [name]="'quantity-' + i" type="number" min="0.0001" step="0.0001" [(ngModel)]="line.quantity" required>
+            </label>
+            <label>Unit of measure <span>*</span>
+              <input [name]="'uom-' + i" [(ngModel)]="line.uomCode" required maxlength="12">
+            </label>
+            <label>Drawing revision
+              <input [name]="'revision-' + i" [(ngModel)]="line.drawingRevision" maxlength="60">
+            </label>
+            <label>Plant code
+              <input [name]="'linePlant-' + i" [(ngModel)]="line.plantCode" maxlength="30">
+            </label>
+            <label class="wide">Technical specifications
+              <textarea [name]="'specifications-' + i" [(ngModel)]="line.technicalSpecifications" rows="2" maxlength="4000"></textarea>
+            </label>
+          </div>
+          @if (lines.length > 1) {
+            <button class="text-button danger" type="button" (click)="removeLine(i)">Remove line</button>
+          }
+        </fieldset>
+      }
+      <div class="form-actions">
+        <button class="secondary-button" type="button" (click)="showCreateForm = false">Cancel</button>
+        <button class="primary-button" type="submit" [disabled]="rfqForm.invalid || creating">
+          {{ creating ? 'Saving draft…' : 'Save RFQ draft' }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+
+<div class="workspace-grid">
+  <section class="list-card">
+    <div class="card-heading">
+      <div><h2>Sourcing events</h2><p>{{ rfqs.length }} RFQs in your accessible scope</p></div>
+    </div>
+    @if (loading) {
+      <p class="empty-state">Loading RFQs…</p>
+    } @else if (rfqs.length === 0) {
+      <div class="empty-state">No RFQs yet. Create a draft to begin.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>RFQ</th><th>Status</th><th>Deadline</th><th>Suppliers</th><th></th></tr></thead>
+          <tbody>
+            @for (rfq of rfqs; track rfq.rfqId) {
+              <tr>
+                <td><strong>{{ rfq.rfqNumber }}</strong><small>{{ rfq.title }}</small></td>
+                <td><span class="status-pill" [class.published]="rfq.status === 'PUBLISHED'">{{ rfq.status }}</span></td>
+                <td>{{ rfq.submissionDeadline | date:'medium' }}</td>
+                <td>{{ rfq.invitationCount }}</td>
+                <td><button class="text-button" type="button" (click)="openRfq(rfq)">Open</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (selectedRfq; as rfq) {
+    <section class="detail-card">
+      <div class="card-heading">
+        <div><span class="eyebrow">{{ rfq.rfqNumber }}</span><h2>{{ rfq.title }}</h2></div>
+        <button class="secondary-button" type="button" (click)="closeDetails()">Close</button>
+      </div>
+      <p class="detail-description">{{ rfq.description || 'No additional scope description.' }}</p>
+      <div class="detail-meta">
+        <div><span>Status</span><strong>{{ rfq.status }}</strong></div>
+        <div><span>Currency</span><strong>{{ rfq.currencyCode }}</strong></div>
+        <div><span>Deadline</span><strong>{{ rfq.submissionDeadline | date:'medium' }}</strong></div>
+        <div><span>Required delivery</span><strong>{{ rfq.requiredDeliveryDate || '—' }}</strong></div>
+      </div>
+
+      <h3>Material lines</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Material</th><th>Description</th><th>Quantity</th><th>UOM</th></tr></thead>
+          <tbody>
+            @for (line of rfq.lines; track line.rfqLineId) {
+              <tr><td>{{ line.lineNumber }}</td><td>{{ line.sapMaterialCode }}</td><td>{{ line.description }}</td><td>{{ line.quantity }}</td><td>{{ line.uomCode }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (rfq.status === 'DRAFT') {
+        <div class="invite-panel">
+          <h3>Invite approved suppliers</h3>
+          @if (supplierLoading) {
+            <p class="helper-text">Loading supplier records…</p>
+          } @else if (eligibleSuppliers.length === 0) {
+            <p class="helper-text">No approved suppliers are available to invite.</p>
+          } @else {
+            <label>Qualified suppliers
+              <select name="selectedSupplierIds" multiple size="5" [(ngModel)]="selectedSupplierIds">
+                @for (supplier of eligibleSuppliers; track supplier.supplierId) {
+                  <option [value]="supplier.supplierId">{{ supplier.supplierNumber }} · {{ supplier.legalName }}</option>
+                }
+              </select>
+            </label>
+            <button class="secondary-button" type="button" (click)="inviteSuppliers()"
+              [disabled]="inviting || selectedSupplierIds.length === 0">
+              {{ inviting ? 'Inviting…' : 'Invite selected suppliers' }}
+            </button>
+          }
+          @if (rfq.invitations.length > 0) {
+            <button class="primary-button publish-button" type="button" (click)="publishRfq()" [disabled]="publishing">
+              {{ publishing ? 'Publishing…' : 'Publish RFQ' }}
+            </button>
+          }
+        </div>
+      } @else {
+        <h3>Invited suppliers</h3>
+      }
+      @if (rfq.invitations.length > 0) {
+        <ul class="invitation-list">
+          @for (invitation of rfq.invitations; track invitation.supplierId) {
+            <li><span>{{ invitation.supplierNumber }} · {{ invitation.legalName }}</span><strong>{{ invitation.invitationStatus }}</strong></li>
+          }
+        </ul>
+      } @else if (rfq.status !== 'DRAFT') {
+        <p class="helper-text">No supplier invitation records are available.</p>
+      }
+    </section>
+  }
+</div>
