@@ -57,8 +57,9 @@ class SupplierLifecycleServiceTest {
         assertEquals("DRAFT", result.previousStatus());
         assertEquals("SUBMITTED", result.currentStatus());
         assertEquals("SUPPLIER_SUBMITTED", result.action());
-        assertEquals(3, updateArguments.size());
+        assertEquals(4, updateArguments.size());
         assertEquals("SRM_ADMIN", updateArguments.get(2)[1]);
+        assertEquals(SUPPLIER_ID, updateArguments.get(3)[0]);
     }
 
     @Test

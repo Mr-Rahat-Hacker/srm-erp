@@ -89,6 +89,35 @@ public class SupplierLifecycleService {
                 VALUES (?, ?, ?, 'SUPPLIER', ?, ?, 'SUCCESS', ?, 
                         jsonb_build_object('lifecycle_status', jsonb_build_object('old', ?, 'new', ?)))
                 """, actorId, actorType, action, supplierId, supplierId, reason, oldStatus, newStatus);
+        if ("SUBMITTED".equals(newStatus)) {
+            jdbc.update("""
+                    INSERT INTO srm.notification
+                        (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                    SELECT u.user_id, 'SUPPLIER_REVIEW_REQUIRED', channels.channel, 'QUEUED',
+                           'Supplier profile needs review',
+                           s.legal_name || ' submitted a profile for verification.',
+                           '/suppliers'
+                    FROM srm.app_user u
+                    JOIN srm.user_role ur ON ur.user_id = u.user_id
+                    JOIN srm.role r ON r.role_id = ur.role_id
+                    JOIN srm.supplier_organization s ON s.supplier_id = ?
+                    CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                    WHERE u.account_status = 'ACTIVE' AND r.role_code = 'SUPPLIER_VERIFIER'
+                    """, supplierId);
+        } else {
+            jdbc.update("""
+                    INSERT INTO srm.notification
+                        (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                    SELECT m.user_id, 'SUPPLIER_STATUS_UPDATED', channels.channel, 'QUEUED',
+                           'Supplier registration update',
+                           'Your supplier profile status is now ' || ? || '.'
+                           || CASE WHEN ? IS NULL THEN '' ELSE ' ' || ? END,
+                           '/dashboard'
+                    FROM srm.supplier_user_membership m
+                    CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                    WHERE m.supplier_id = ? AND m.membership_status = 'ACTIVE'
+                    """, newStatus, reason, reason, supplierId);
+        }
         return new LifecycleResult(supplierId, oldStatus, newStatus, action);
     }
 
