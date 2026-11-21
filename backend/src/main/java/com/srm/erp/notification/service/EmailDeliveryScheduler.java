@@ -42,9 +42,8 @@ public class EmailDeliveryScheduler {
                 message.setFrom(fromAddress);
                 message.setTo(job.email());
                 message.setSubject(job.title());
-                String link = job.targetPath() == null ? "" : "
-
-Open SRM: "
+                String link = job.targetPath() == null ? "" : System.lineSeparator()
+                        + System.lineSeparator() + "Open SRM: "
                         + publicBaseUrl.replaceAll("/+$", "") + job.targetPath();
                 message.setText(job.body() + link);
                 mailSender.send(message);
