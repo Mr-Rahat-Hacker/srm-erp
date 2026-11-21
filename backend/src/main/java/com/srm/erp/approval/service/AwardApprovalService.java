@@ -27,6 +27,40 @@ public class AwardApprovalService {
         this.jdbc = jdbc;
     }
 
+    public List<EligibleApproverRecord> eligibleApprovers(UUID buyerId) {
+        return jdbc.query("""
+                SELECT DISTINCT u.user_id, u.full_name, u.email
+                FROM srm.app_user u
+                JOIN srm.user_role ur ON ur.user_id = u.user_id
+                JOIN srm.role r ON r.role_id = ur.role_id
+                WHERE u.account_status = 'ACTIVE' AND r.role_code = 'PROCUREMENT_APPROVER'
+                  AND u.user_id <> ?
+                ORDER BY u.full_name
+                """, (rs, row) -> new EligibleApproverRecord(
+                rs.getObject("user_id", UUID.class), rs.getString("full_name"), rs.getString("email")),
+                buyerId);
+    }
+
+    public List<ApprovalTaskRecord> rfqRequests(UUID rfqId, UUID buyerId) {
+        requireBuyerOwnsRfq(rfqId, buyerId);
+        return jdbc.query("""
+                SELECT ar.approval_request_id, at.approval_task_id, r.rfq_id, r.rfq_number, r.title,
+                       sr.recommendation_id, s.supplier_id, s.supplier_number, s.legal_name,
+                       v.quotation_version_id, v.version_number, sr.justification,
+                       ar.requested_by, requester.full_name AS requester_name, ar.status,
+                       ar.created_at, at.due_at
+                FROM srm.approval_request ar
+                JOIN srm.approval_task at ON at.approval_request_id = ar.approval_request_id
+                JOIN srm.supplier_recommendation sr ON sr.recommendation_id = ar.entity_id
+                JOIN srm.rfq r ON r.rfq_id = sr.rfq_id
+                JOIN srm.supplier_organization s ON s.supplier_id = sr.supplier_id
+                JOIN srm.quotation_version v ON v.quotation_version_id = sr.quotation_version_id
+                JOIN srm.app_user requester ON requester.user_id = ar.requested_by
+                WHERE ar.entity_type = 'AWARD' AND r.rfq_id = ?
+                ORDER BY ar.created_at DESC
+                """, (rs, row) -> mapTask(rs), rfqId);
+    }
+
     @Transactional
     public ApprovalTaskRecord requestApproval(UUID rfqId, UUID buyerId, AwardApprovalRequest request) {
         if (request == null || request.recommendationId() == null || request.approverUserId() == null) {
