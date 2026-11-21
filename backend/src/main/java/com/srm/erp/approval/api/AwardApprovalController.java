@@ -46,6 +46,13 @@ public class AwardApprovalController {
         return ApiResponse.success("Assigned approval tasks retrieved", approvals.myTasks(actorId()));
     }
 
+    @GetMapping("/approvals/tasks/{taskId}/review-context")
+    @PreAuthorize("hasRole('PROCUREMENT_APPROVER')")
+    public ApiResponse<ApprovalReviewContext> reviewContext(@PathVariable UUID taskId) {
+        return ApiResponse.success("Approval review context retrieved",
+                approvals.reviewContext(taskId, actorId()));
+    }
+
     @PostMapping("/approvals/tasks/{taskId}/decision")
     @PreAuthorize("hasRole('PROCUREMENT_APPROVER')")
     public ApiResponse<ApprovalTaskRecord> decide(

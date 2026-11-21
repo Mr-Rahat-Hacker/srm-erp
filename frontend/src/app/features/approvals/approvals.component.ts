@@ -1,18 +1,21 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApprovalService } from './approval.service';
-import { ApprovalTask } from './approval.models';
+import { ApprovalReviewContext, ApprovalTask } from './approval.models';
 
 @Component({
   selector: 'app-approvals',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, DecimalPipe, FormsModule],
   templateUrl: './approvals.component.html',
   styleUrl: './approvals.component.scss',
 })
 export class ApprovalsComponent implements OnInit {
   private readonly approvals = inject(ApprovalService);
   tasks: ApprovalTask[] = [];
+  contexts: Record<string, ApprovalReviewContext> = {};
+  expandedContext: Record<string, boolean> = {};
+  contextLoadingTask: string | null = null;
   comments: Record<string, string> = {};
   loading = true;
   savingTask: string | null = null;
@@ -31,6 +34,26 @@ export class ApprovalsComponent implements OnInit {
       error: (error) => {
         this.error = error?.error?.message ?? 'Could not load assigned approval tasks.';
         this.loading = false;
+      },
+    });
+  }
+
+  toggleReviewContext(taskId: string): void {
+    if (this.contexts[taskId]) {
+      this.expandedContext[taskId] = !this.expandedContext[taskId];
+      return;
+    }
+    this.contextLoadingTask = taskId;
+    this.error = '';
+    this.approvals.getReviewContext(taskId).subscribe({
+      next: (response) => {
+        this.contexts[taskId] = response.data;
+        this.expandedContext[taskId] = true;
+        this.contextLoadingTask = null;
+      },
+      error: (error) => {
+        this.error = error?.error?.message ?? 'Could not load RFQ review context.';
+        this.contextLoadingTask = null;
       },
     });
   }

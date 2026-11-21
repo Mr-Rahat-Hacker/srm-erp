@@ -31,3 +31,26 @@ textarea { box-sizing:border-box; width:100%; padding:9px; border:1px solid #dfe
 .resolved { margin:0; color:#78889b; font-size:10px; }
 .empty-state { padding:32px; border:1px solid #e6ebf1; border-radius:10px; background:#fff; color:#52657a; text-align:center; font-size:12px; }
 .empty-state p { margin-bottom:0; color:#78889b; }
+
+.context-button { justify-self:start; padding:8px 11px; border:1px solid #dbe5ed; border-radius:6px; background:#f7fafc; color:#315c80; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
+.context-button:disabled { opacity:.55; }
+.review-context { display:grid; gap:14px; padding:14px; border:1px solid #dce5ed; border-radius:8px; background:#fbfcfd; }
+.review-context h3 { margin:0 0 8px; color:#30465e; font-size:12px; }
+.context-rfq { display:grid; gap:6px; padding-bottom:12px; border-bottom:1px solid #e5ebf0; }
+.context-rfq h3 { margin:0; font-size:15px; }
+.context-rfq p,.review-context p { margin:4px 0; color:#52657a; font-size:10px; line-height:1.5; white-space:pre-wrap; }
+.context-rfq > div { display:flex; flex-wrap:wrap; gap:8px; color:#78889b; font-size:9px; }
+.context-rfq > div span { padding:4px 7px; border-radius:12px; background:#f0f4f7; }
+.context-rfq small,.activity small { color:#8795a5; font-size:9px; }
+.comparison-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:9px; }
+.quote-context,.activity { padding:11px; border:1px solid #e6ebf1; border-radius:7px; background:white; }
+.quote-context header { display:flex; justify-content:space-between; color:#30465e; font-size:10px; }
+.quote-context > p { margin:6px 0; }
+.quote-context .deviation { padding:7px; border-radius:5px; background:#fff8eb; color:#795e2b; }
+.quote-lines { display:grid; gap:6px; padding-top:7px; border-top:1px solid #edf1f5; }
+.quote-lines div { display:grid; grid-template-columns:1.3fr 1fr; gap:4px; font-size:9px; color:#52657a; }
+.quote-lines strong { text-align:right; color:#30465e; }
+.quote-lines small { grid-column:1/-1; color:#8795a5; }
+.activity { margin-top:7px; }
+.activity strong,.activity small { display:block; }
+.activity strong { color:#30465e; font-size:10px; }

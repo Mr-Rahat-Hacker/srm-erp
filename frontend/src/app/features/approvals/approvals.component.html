@@ -33,6 +33,78 @@
           @if (task.dueAt) { <div><dt>Due</dt><dd>{{ task.dueAt | date:'medium' }}</dd></div> }
         </dl>
 
+        <button type="button" class="context-button" [disabled]="contextLoadingTask === task.approvalTaskId"
+          (click)="toggleReviewContext(task.approvalTaskId)">
+          {{ contextLoadingTask === task.approvalTaskId ? 'Loading review context…'
+            : expandedContext[task.approvalTaskId] ? 'Hide RFQ and sourcing context' : 'Review RFQ, quotation comparison and negotiation history' }}
+        </button>
+        @if (expandedContext[task.approvalTaskId] && contexts[task.approvalTaskId]; as context) {
+          <section class="review-context">
+            <div class="context-rfq">
+              <span class="eyebrow">{{ context.rfq.rfqNumber }} · {{ context.rfq.currencyCode }}</span>
+              <h3>{{ context.rfq.title }}</h3>
+              @if (context.rfq.description) { <p>{{ context.rfq.description }}</p> }
+              <div><span>Deadline {{ context.rfq.submissionDeadline | date:'medium' }}</span>
+                <span>Required by {{ context.rfq.requiredDeliveryDate || '—' }}</span>
+                <span>Plant {{ context.rfq.plantCode || '—' }}</span>
+                <span>Purchasing group {{ context.rfq.purchasingGroup || '—' }}</span></div>
+              @if (context.rfq.paymentTerms || context.rfq.incoterms) {
+                <small>Payment {{ context.rfq.paymentTerms || '—' }} · Incoterms {{ context.rfq.incoterms || '—' }}</small>
+              }
+            </div>
+
+            <div>
+              <h3>Quotation comparison</h3>
+              @if (!context.quotations.length) { <p>No submitted quotations found.</p> }
+              <div class="comparison-grid">
+                @for (quote of context.quotations; track quote.quotationVersionId) {
+                  <article class="quote-context">
+                    <header><strong>{{ quote.supplierName }}</strong><span>v{{ quote.versionNumber }}</span></header>
+                    <p>{{ quote.totalLandedCost | number:'1.2-2' }} {{ quote.currencyCode }} ·
+                      {{ quote.leadTimeDays ?? '—' }} days · valid {{ quote.validityDate || '—' }}</p>
+                    @if (quote.technicalDeviations) { <p class="deviation">{{ quote.technicalDeviations }}</p> }
+                    <div class="quote-lines">
+                      @for (line of quote.lines; track line.lineNumber) {
+                        <div><span>{{ line.materialCode }} · {{ line.quantity }} {{ line.unit }}</span>
+                          <strong>{{ line.netUnitPrice | number:'1.2-4' }} {{ quote.currencyCode }}</strong>
+                          <small>Landed line {{ line.landedLineTotal | number:'1.2-2' }}</small></div>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            </div>
+
+            <div>
+              <h3>Negotiation history</h3>
+              @if (!context.negotiationHistory.length) { <p>No negotiation rounds recorded.</p> }
+              @for (activity of context.negotiationHistory; track activity.supplierId + activity.roundNumber + activity.messageCreatedAt) {
+                <article class="activity">
+                  <strong>{{ activity.supplierName }} · round {{ activity.roundNumber }} · {{ activity.roundStatus }}</strong>
+                  <small>{{ activity.outcome || 'Open / no recorded outcome' }} @if (activity.responseDeadline) { · due {{ activity.responseDeadline | date:'medium' }} }</small>
+                  @if (activity.messageText) {
+                    <p>{{ activity.senderName }} · {{ activity.messageType }}: {{ activity.messageText }}</p>
+                    @if (activity.quotationVersion) { <small>Quotation v{{ activity.quotationVersion }}</small> }
+                  }
+                  @if (activity.outcomeRemarks) { <p>{{ activity.outcomeRemarks }}</p> }
+                </article>
+              }
+            </div>
+
+            <div>
+              <h3>Technical and commercial evaluations</h3>
+              @if (!context.evaluations.length) { <p>No evaluation records available.</p> }
+              @for (evaluation of context.evaluations; track evaluation.supplierId + evaluation.evaluatedAt + evaluation.evaluationType) {
+                <article class="activity">
+                  <strong>{{ evaluation.supplierName }} · {{ evaluation.evaluationType }} · v{{ evaluation.quotationVersion }} · {{ evaluation.result }}</strong>
+                  <small>{{ evaluation.evaluatorName }} · {{ evaluation.evaluatedAt | date:'medium' }}</small>
+                  @if (evaluation.remarks) { <p>{{ evaluation.remarks }}</p> }
+                </article>
+              }
+            </div>
+          </section>
+        }
+
         <section class="justification">
           <h3>Buyer justification</h3>
           <p>{{ task.justification }}</p>
