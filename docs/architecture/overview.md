@@ -71,6 +71,25 @@ PostgreSQL stores SRM-owned workflow data, supplier-submitted documents and quot
 
 - Spring Security authentication and backend-enforced RBAC.
 - JWT-based authenticated API access with expiry and secure lifecycle.
+- Roles: SUPPLIER_USER, SUPPLIER_VERIFIER, PROCUREMENT_BUYER, PROCUREMENT_APPROVER, SRM_ADMIN, SUPER_ADMIN and AUDITOR.
+- Deny-by-default authorization and least-privilege permissions.
+- Resource-level authorization for supplier ownership, RFQ invitations, quotation access and approval-task assignment.
+- Supplier organization isolation: suppliers cannot view other suppliers' quotations or negotiation data.
+- Approver actions only on assigned tasks; approval decisions occur inside the authenticated application.
+- Segregation of duties: the recommender cannot approve the same award by default.
+- SRM_ADMIN manages delegated users and operational settings; SUPER_ADMIN governs platform-level users, roles and global security. Neither role gets silent authority to change commercial or approval decisions.
+- AUDITOR is read-only; Super Admin audit access is read-only by default.
+- Angular route guards are for user experience only; backend authorization is authoritative.
+- Protect uploaded documents and restrict access by role and record ownership.
+- Keep secrets outside source control.
+- Audit privileged actions, access changes, business lifecycle transitions, negotiation versions, approvals, awards and SAP integration events using append-only audit records.
+
+See [RBAC and Role Permission Matrix](../requirements/rbac-role-permission-matrix.md) and [Audit Log Specification](../requirements/audit-log-specification.md).
+
+## 7. Security baseline and RBAC
+
+- Spring Security authentication and backend-enforced RBAC.
+- JWT-based authenticated API access with expiry and secure lifecycle.
 - Roles: SUPPLIER_USER, SUPPLIER_VERIFIER, PROCUREMENT_BUYER, PROCUREMENT_APPROVER, SRM_ADMIN and AUDITOR.
 - Deny-by-default authorization and least-privilege permissions.
 - Resource-level authorization for supplier ownership, RFQ invitations, quotation access and approval-task assignment.
