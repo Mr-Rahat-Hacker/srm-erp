@@ -114,6 +114,44 @@
       <div><span>Phone</span><strong>{{ supplier.phone || '—' }}</strong></div>
       <div><span>Created</span><strong>{{ supplier.createdAt | date:'medium' }}</strong></div>
     </div>
+
+    <section class="lifecycle-panel" aria-label="Supplier qualification workflow">
+      <div class="lifecycle-heading">
+        <div>
+          <h3>Qualification workflow</h3>
+          <p>Current state: <strong>{{ supplier.lifecycleStatus }}</strong></p>
+        </div>
+        @if (supplier.lifecycleStatus === 'DRAFT' || supplier.lifecycleStatus === 'CORRECTION_REQUIRED') {
+          <button class="primary-button" type="button" (click)="submitForReview()" [disabled]="lifecycleBusy">
+            {{ lifecycleBusy ? 'Updating…' : 'Submit for review' }}
+          </button>
+        } @else if (supplier.lifecycleStatus === 'SUBMITTED') {
+          <button class="primary-button" type="button" (click)="startSupplierReview()" [disabled]="lifecycleBusy">
+            {{ lifecycleBusy ? 'Updating…' : 'Start review' }}
+          </button>
+        }
+      </div>
+
+      @if (supplier.lifecycleStatus === 'UNDER_REVIEW') {
+        <label class="lifecycle-remarks">Reviewer remarks
+          <span>Required to return for correction or reject</span>
+          <textarea name="lifecycleRemarks" [(ngModel)]="lifecycleRemarks" maxlength="2000" rows="2"
+            placeholder="Record the reason for your decision"></textarea>
+        </label>
+        <div class="lifecycle-actions">
+          <button class="primary-button" type="button" (click)="decideSupplier('APPROVE')" [disabled]="lifecycleBusy">
+            Approve qualification
+          </button>
+          <button class="secondary-button" type="button" (click)="decideSupplier('RETURN')"
+            [disabled]="lifecycleBusy || !lifecycleRemarks.trim()">Return for correction</button>
+          <button class="danger-button" type="button" (click)="decideSupplier('REJECT')"
+            [disabled]="lifecycleBusy || !lifecycleRemarks.trim()">Reject supplier</button>
+        </div>
+      } @else {
+        <p class="lifecycle-help">Only an authorized verifier or administrator can advance this state. Supplier qualification does not create an SAP vendor.</p>
+      }
+    </section>
+
     <app-supplier-documents [supplierId]="supplier.supplierId" />
   </section>
 }
