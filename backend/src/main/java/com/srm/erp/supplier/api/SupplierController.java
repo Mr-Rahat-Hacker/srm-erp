@@ -41,7 +41,7 @@ public class SupplierController {
     }
 
     @PostMapping("/{supplierId}/submit")
-    @PreAuthorize("hasAnyRole('SUPPLIER_USER','SRM_ADMIN')")
+    @PreAuthorize("hasRole('SRM_ADMIN')")
     public ApiResponse<SupplierLifecycleService.LifecycleResult> submit(@PathVariable UUID supplierId) {
         return ApiResponse.success("Supplier submitted for verification",
                 lifecycleService.submit(supplierId, currentActor()));
