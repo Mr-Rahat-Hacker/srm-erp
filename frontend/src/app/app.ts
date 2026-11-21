@@ -12,14 +12,23 @@ export class App {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly navigation = [
-    { label: 'Overview', path: '/dashboard', icon: '⌂' },
-    { label: 'Suppliers', path: '/suppliers', icon: '▤' },
-    { label: 'RFQ Management', path: '/rfqs', icon: '◎' },
-    { label: 'Quotations', path: '/quotations', icon: '▧' },
-    { label: 'Approvals', path: '/approvals', icon: '✓' },
-    { label: 'Reports', path: '/reports', icon: '▥' },
-  ];
+  protected get navigation() {
+    const roles = this.currentUser?.roles ?? [];
+    if (roles.includes('SUPPLIER_USER') && !roles.some((role) => role !== 'SUPPLIER_USER')) {
+      return [
+        { label: 'Overview', path: '/dashboard', icon: '⌂' },
+        { label: 'Invited RFQs & quotations', path: '/supplier-portal/quotations', icon: '▧' },
+      ];
+    }
+    return [
+      { label: 'Overview', path: '/dashboard', icon: '⌂' },
+      { label: 'Suppliers', path: '/suppliers', icon: '▤' },
+      { label: 'RFQ Management', path: '/rfqs', icon: '◎' },
+      { label: 'Quotations', path: '/quotations', icon: '▧' },
+      { label: 'Approvals', path: '/approvals', icon: '✓' },
+      { label: 'Reports', path: '/reports', icon: '▥' },
+    ];
+  }
 
   protected get currentUser() {
     return this.auth.getUser();

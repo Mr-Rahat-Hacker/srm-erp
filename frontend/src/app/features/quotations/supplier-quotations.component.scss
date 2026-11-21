@@ -1,0 +1,52 @@
+:host { display:block; color:#1d2d42; }
+.page-heading,.card-heading,.version-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.page-heading { margin-bottom:24px; }
+.eyebrow { color:#8795a5; font-size:9px; font-weight:800; letter-spacing:.14em; }
+h1 { margin:8px 0 5px; color:#17263b; font-size:clamp(27px,3vw,36px); letter-spacing:-.04em; }
+.page-heading p,.card-heading p { margin:0; color:#78889b; font-size:12px; }
+.primary-button,.secondary-button { min-height:38px; padding:0 14px; border-radius:7px; font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+.primary-button { border:1px solid #183b5d; background:#183b5d; color:#fff; }
+.secondary-button { border:1px solid #dce4ec; background:#fff; color:#40566d; }
+button:disabled { cursor:not-allowed; opacity:.55; }
+.workspace { display:grid; grid-template-columns:minmax(300px,.72fr) minmax(500px,1.28fr); align-items:start; gap:16px; }
+.list-card,.detail-card { padding:20px; border:1px solid #e6ebf1; border-radius:11px; background:#fff; }
+.detail-card { display:grid; gap:14px; }
+.card-heading { align-items:flex-start; }
+.card-heading h2 { margin:5px 0; color:#17263b; font-size:17px; }
+.card-heading p { max-width:500px; line-height:1.5; }
+.notice { padding:11px 14px; border-radius:7px; font-size:11px; }
+.notice.success { background:#edf8f1; color:#267447; }
+.notice.error { background:#fff1f0; color:#a13d36; }
+.table-wrap { overflow:auto; }
+table { width:100%; border-collapse:collapse; text-align:left; }
+th { padding:9px; background:#f7f9fb; color:#8795a5; font-size:9px; text-transform:uppercase; }
+td { padding:11px 9px; border-bottom:1px solid #edf1f5; color:#52657a; font-size:10px; vertical-align:top; }
+td strong,td small { display:block; }
+td strong { color:#273b51; }
+td small { margin-top:4px; color:#8b98a7; }
+.text-button { border:0; background:transparent; color:#315c80; font:inherit; font-size:10px; font-weight:800; cursor:pointer; }
+.empty-state { padding:28px 10px; color:#78889b; text-align:center; font-size:11px; }
+.empty-state strong { display:block; margin-bottom:5px; color:#30465e; }
+.empty-state p,.helper-text,.line-reference { margin:5px 0 0; color:#8795a5; font-size:10px; }
+.status-pill { display:inline-block; margin-left:6px; padding:4px 7px; border-radius:20px; background:#f0f4f8; color:#62758a; font-size:9px; font-weight:800; }
+.terms-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.terms-grid div { display:grid; gap:4px; padding:9px; border:1px solid #edf1f5; border-radius:6px; }
+.terms-grid span { color:#8795a5; font-size:9px; }
+.terms-grid strong { color:#30465e; font-size:10px; }
+h3 { margin:6px 0 2px; color:#273b51; font-size:13px; }
+.version-list { display:grid; gap:7px; }
+.version-card { padding:10px; border:1px solid #edf1f5; border-radius:7px; }
+.version-heading { color:#8795a5; font-size:9px; }
+.version-heading strong { color:#30465e; font-size:11px; }
+.version-card p { margin:7px 0 0; color:#62758a; font-size:10px; }
+.form-grid,.line-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+label { display:grid; gap:5px; color:#53657a; font-size:10px; font-weight:750; }
+label.wide { grid-column:1/-1; }
+input,textarea { width:100%; min-height:34px; box-sizing:border-box; padding:7px 9px; border:1px solid #dfe6ed; border-radius:6px; color:#30465e; font:inherit; font-size:10px; }
+textarea { resize:vertical; }
+.line-card { margin:0; padding:11px; border:1px solid #e8edf2; border-radius:8px; }
+.line-card legend { padding:0 4px; color:#53657a; font-size:10px; font-weight:800; }
+.line-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.form-actions { display:flex; justify-content:flex-end; gap:8px; padding-top:12px; border-top:1px solid #edf1f5; }
+@media(max-width:980px) { .workspace { grid-template-columns:1fr; } }
+@media(max-width:640px) { .page-heading,.card-heading { align-items:flex-start; flex-direction:column; } .terms-grid,.form-grid,.line-grid { grid-template-columns:1fr; } label.wide { grid-column:auto; } }
