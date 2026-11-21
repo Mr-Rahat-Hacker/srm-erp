@@ -90,6 +90,12 @@ These remain in SAP for the initial manufacturing use case unless separately app
 - No direct database writes to SAP.
 - Approvals occur inside the authenticated application, not through unauthenticated email links.
 
+## 5. Role-Based Access Control (RBAC)
+
+The first release must implement backend-enforced RBAC with supplier organization isolation and record-level authorization. Roles include SUPPLIER_USER, SUPPLIER_VERIFIER, PROCUREMENT_BUYER, PROCUREMENT_APPROVER, SRM_ADMIN and AUDITOR. Access is deny-by-default and least-privilege. Suppliers can access only their own organization data and invited RFQs; approvers can act only on assigned approval tasks; auditors are read-only. Administrative user/role management does not grant business approval authority. Apply segregation of duties so a recommender cannot approve the same award by default.
+
+See [RBAC and Role Permission Matrix](rbac-role-permission-matrix.md) for the detailed permissions and mandatory controls.
+
 ## 5. Main user roles
 
 - Supplier User
