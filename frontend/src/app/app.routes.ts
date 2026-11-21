@@ -2,14 +2,17 @@ import { Routes } from '@angular/router';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { SuppliersComponent } from './features/suppliers/suppliers.component';
 import { ModulePlaceholderComponent } from './shared/components/module-placeholder/module-placeholder.component';
+import { LoginComponent } from './features/auth/login.component';
+import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginComponent },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'suppliers', component: SuppliersComponent },
-  { path: 'rfqs', component: ModulePlaceholderComponent, data: { title: 'RFQ Management', description: 'Create sourcing events, maintain RFQ line references and invite qualified suppliers.', status: 'Planned module' } },
-  { path: 'quotations', component: ModulePlaceholderComponent, data: { title: 'Quotation Management', description: 'Receive supplier quotations, maintain revisions and compare commercial offers.', status: 'Planned module' } },
-  { path: 'approvals', component: ModulePlaceholderComponent, data: { title: 'Approvals', description: 'Review assigned supplier, sourcing and award approval tasks.', status: 'Planned module' } },
-  { path: 'reports', component: ModulePlaceholderComponent, data: { title: 'Reports & Audit', description: 'Explore SRM activity, workflow history and audit records.', status: 'Planned module' } },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+  { path: 'suppliers', component: SuppliersComponent, canActivate: [authGuard] },
+  { path: 'rfqs', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'RFQ Management', description: 'Create sourcing events, maintain RFQ line references and invite qualified suppliers.', status: 'Planned module' } },
+  { path: 'quotations', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'Quotation Management', description: 'Receive supplier quotations, maintain revisions and compare commercial offers.', status: 'Planned module' } },
+  { path: 'approvals', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'Approvals', description: 'Review assigned supplier, sourcing and award approval tasks.', status: 'Planned module' } },
+  { path: 'reports', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'Reports & Audit', description: 'Explore SRM activity, workflow history and audit records.', status: 'Planned module' } },
   { path: '**', redirectTo: 'dashboard' },
 ];
