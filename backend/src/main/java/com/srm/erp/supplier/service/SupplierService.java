@@ -62,7 +62,7 @@ public class SupplierService {
                     request.countryCode().trim().toUpperCase());
         }
 
-        return findById(supplierId);
+        return findByIdPublic(supplierId);
     }
 
     public List<SupplierResponse> findAll() {
@@ -77,7 +77,7 @@ public class SupplierService {
                 """, supplierMapper);
     }
 
-    private SupplierResponse findById(UUID supplierId) {
+    public SupplierResponse findByIdPublic(UUID supplierId) {
         return jdbc.queryForObject("""
                 SELECT s.supplier_id, s.supplier_number, s.legal_name, s.trade_name,
                        s.gstin, s.pan, s.lifecycle_status, s.created_at,
