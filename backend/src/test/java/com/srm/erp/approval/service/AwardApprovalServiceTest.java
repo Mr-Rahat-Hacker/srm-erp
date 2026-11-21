@@ -49,4 +49,14 @@ class AwardApprovalServiceTest {
         assertEquals(400, error.getStatusCode().value());
         verifyNoInteractions(jdbc);
     }
+
+    @Test
+    void requiresCommentsForApprovalDecision() {
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> service.decide(java.util.UUID.randomUUID(), java.util.UUID.randomUUID(),
+                        new ApprovalDecisionRequest("APPROVE", "  ")));
+
+        assertEquals(400, error.getStatusCode().value());
+        verifyNoInteractions(jdbc);
+    }
 }
