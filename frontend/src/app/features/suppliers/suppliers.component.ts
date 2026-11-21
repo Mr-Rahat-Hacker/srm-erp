@@ -1,12 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SupplierService } from './supplier.service';
 import { Supplier, SupplierRegistration } from './supplier.models';
 
 @Component({
   selector: 'app-suppliers',
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   templateUrl: './suppliers.component.html',
   styleUrl: './suppliers.component.scss',
 })
