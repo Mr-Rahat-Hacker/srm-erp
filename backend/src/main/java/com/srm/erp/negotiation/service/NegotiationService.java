@@ -77,6 +77,20 @@ public class NegotiationService {
                     participant.baselineVersionId());
             insertMessage(roundId, buyerId, "BUYER_REQUEST", request.initialRequest(), null);
             audit(buyerId, supplierId, rfqId, roundId, "NEGOTIATION_ROUND_OPENED");
+            jdbc.update("""
+                    INSERT INTO srm.notification
+                        (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                    SELECT m.user_id, 'NEGOTIATION_REQUEST', channels.channel, 'QUEUED',
+                           'Negotiation response requested for RFQ ' || r.rfq_number,
+                           ? || ' Response deadline: '
+                           || to_char(?::timestamptz AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' UTC.',
+                           '/supplier-portal/negotiations'
+                    FROM srm.rfq r
+                    JOIN srm.supplier_user_membership m ON m.supplier_id = ?
+                    CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                    WHERE r.rfq_id = ? AND m.membership_status = 'ACTIVE'
+                    """, request.initialRequest(), request.responseDeadline(), supplierId, rfqId);
+
         }
         return listForBuyer(rfqId, buyerId);
     }
