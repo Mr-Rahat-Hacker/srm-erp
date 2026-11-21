@@ -1,12 +1,19 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
-  styleUrl: './app.scss',
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.html',
+  styleUrl: './app.scss',
 })
 export class App {
-  protected readonly title = signal('frontend');
+  protected readonly navigation = [
+    { label: 'Overview', path: '/dashboard', icon: '⌂' },
+    { label: 'Suppliers', path: '/suppliers', icon: '▤' },
+    { label: 'RFQ Management', path: '/rfqs', icon: '◎' },
+    { label: 'Quotations', path: '/quotations', icon: '▧' },
+    { label: 'Approvals', path: '/approvals', icon: '✓' },
+    { label: 'Reports', path: '/reports', icon: '▥' },
+  ];
 }
