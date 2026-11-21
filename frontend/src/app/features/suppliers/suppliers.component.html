@@ -4,9 +4,12 @@
     <h1>Supplier management</h1>
     <p>Register supplier organizations and maintain their primary business contact.</p>
   </div>
-  <button class="primary-button" type="button" (click)="showForm = !showForm">
-    {{ showForm ? 'Close form' : '+ Register supplier' }}
-  </button>
+  <div class="heading-actions">
+    <button class="secondary-button" type="button" (click)="loadSuppliers()" [disabled]="loading">Refresh</button>
+    <button class="primary-button" type="button" (click)="showForm = !showForm">
+      {{ showForm ? 'Close form' : '+ Register supplier' }}
+    </button>
+  </div>
 </div>
 
 @if (successMessage) {
@@ -92,6 +95,28 @@
   </section>
 }
 
+@if (detailsLoading) {
+  <div class="notice" role="status">Loading supplier details…</div>
+}
+@if (selectedSupplier; as supplier) {
+  <section class="details-card" aria-label="Supplier details">
+    <div class="card-heading">
+      <div><h2>{{ supplier.legalName }}</h2><p>{{ supplier.supplierNumber }} · Supplier profile</p></div>
+      <button class="secondary-button" type="button" (click)="closeDetails()">Close details</button>
+    </div>
+    <div class="details-grid">
+      <div><span>Trade name</span><strong>{{ supplier.tradeName || '—' }}</strong></div>
+      <div><span>Lifecycle status</span><strong>{{ supplier.lifecycleStatus }}</strong></div>
+      <div><span>GSTIN</span><strong>{{ supplier.gstin || '—' }}</strong></div>
+      <div><span>PAN</span><strong>{{ supplier.pan || '—' }}</strong></div>
+      <div><span>Primary contact</span><strong>{{ supplier.contactName || '—' }}</strong></div>
+      <div><span>Email</span><strong>{{ supplier.email || '—' }}</strong></div>
+      <div><span>Phone</span><strong>{{ supplier.phone || '—' }}</strong></div>
+      <div><span>Created</span><strong>{{ supplier.createdAt | date:'medium' }}</strong></div>
+    </div>
+  </section>
+}
+
 <section class="list-card">
   <div class="card-heading">
     <div>
@@ -113,7 +138,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Supplier</th><th>Supplier ID</th><th>Primary contact</th><th>GSTIN</th><th>Status</th></tr>
+          <tr><th>Supplier</th><th>Supplier ID</th><th>Primary contact</th><th>GSTIN</th><th>Status</th><th>Action</th></tr>
         </thead>
         <tbody>
           @for (supplier of suppliers; track supplier.supplierId) {
@@ -123,6 +148,7 @@
               <td>{{ supplier.contactName || '—' }}<small>{{ supplier.email || '—' }}</small></td>
               <td>{{ supplier.gstin || '—' }}</td>
               <td><span class="status-pill">{{ supplier.lifecycleStatus }}</span></td>
+              <td><button class="text-button" type="button" (click)="viewDetails(supplier)">View</button></td>
             </tr>
           }
         </tbody>
