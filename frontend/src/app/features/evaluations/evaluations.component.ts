@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { QuotationComparison, ComparisonSupplier, RfqSummary } from '../quotations/comparison.models';
 import { QuotationComparisonService } from '../quotations/quotation-comparison.service';
 import { EvaluationCreatePayload, RfqEvaluationHistory } from './evaluation.models';
+import { ApprovalTask, AwardRecord, EligibleApprover } from '../approvals/approval.models';
+import { ApprovalService } from '../approvals/approval.service';
 import { EvaluationService } from './evaluation.service';
 
 interface EvaluationDraft {
@@ -24,6 +26,7 @@ interface EvaluationDraft {
 export class EvaluationsComponent implements OnInit {
   private readonly comparisons = inject(QuotationComparisonService);
   private readonly evaluations = inject(EvaluationService);
+  private readonly approvals = inject(ApprovalService);
 
   protected rfqs: RfqSummary[] = [];
   protected selectedRfqId = '';
@@ -34,12 +37,20 @@ export class EvaluationsComponent implements OnInit {
   protected savingSupplierId = '';
   protected errorMessage = '';
   protected successMessage = '';
+  protected eligibleApprovers: EligibleApprover[] = [];
+  protected approvalRequests: ApprovalTask[] = [];
+  protected selectedApprovers: Record<string, string> = {};
+  protected finalAward: AwardRecord | null = null;
+  protected savingWorkflow = false;
 
   protected get submittedSuppliers(): ComparisonSupplier[] {
     return (this.comparison?.suppliers ?? []).filter((supplier) => supplier.submittedVersion !== null);
   }
 
   ngOnInit(): void {
+    this.approvals.getEligibleApprovers().subscribe({
+      next: (response) => { this.eligibleApprovers = response.data ?? []; },
+    });
     this.comparisons.getRfqs().subscribe({
       next: (response) => { this.rfqs = response.data ?? []; },
       error: (error: HttpErrorResponse) => {
@@ -73,6 +84,7 @@ export class EvaluationsComponent implements OnInit {
         this.history = response.data;
         this.loading = false;
         for (const supplier of this.submittedSuppliers) this.ensureDraft(supplier.supplierId);
+        this.loadAwardWorkflow();
       },
       error: (error: HttpErrorResponse) => {
         this.errorMessage = error.error?.message ?? 'Unable to load evaluation history.';
@@ -112,6 +124,64 @@ export class EvaluationsComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.errorMessage = error.error?.message ?? 'Unable to save this evaluation.';
         this.savingSupplierId = '';
+      },
+    });
+  }
+
+  private loadAwardWorkflow(): void {
+    if (!this.selectedRfqId) return;
+    this.approvals.getRfqRequests(this.selectedRfqId).subscribe({
+      next: (response) => { this.approvalRequests = response.data ?? []; },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to load award approval requests.';
+      },
+    });
+    this.approvals.getAwardForRfq(this.selectedRfqId).subscribe({
+      next: (response) => { this.finalAward = response.data; },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to load the final award.';
+      },
+    });
+  }
+
+  protected requestsFor(recommendationId: string): ApprovalTask[] {
+    return this.approvalRequests.filter((request) => request.recommendationId === recommendationId);
+  }
+
+  protected requestAwardApproval(recommendationId: string): void {
+    const approverId = this.selectedApprovers[recommendationId];
+    if (!approverId || this.savingWorkflow || this.finalAward) return;
+    this.savingWorkflow = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.approvals.requestApproval(this.selectedRfqId, recommendationId, approverId).subscribe({
+      next: (response) => {
+        this.successMessage = response.message;
+        this.selectedApprovers[recommendationId] = '';
+        this.savingWorkflow = false;
+        this.loadAwardWorkflow();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to request award approval.';
+        this.savingWorkflow = false;
+      },
+    });
+  }
+
+  protected finalizeAward(request: ApprovalTask): void {
+    if (this.savingWorkflow || this.finalAward) return;
+    this.savingWorkflow = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.approvals.award(this.selectedRfqId, request.approvalRequestId).subscribe({
+      next: (response) => {
+        this.finalAward = response.data;
+        this.successMessage = response.message;
+        this.savingWorkflow = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to record the final award.';
+        this.savingWorkflow = false;
       },
     });
   }
