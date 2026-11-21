@@ -57,6 +57,13 @@ public class SapPirOutboxService {
         SapIntegrationRecord existing = findForAward(awardId);
         if (existing != null) return existing;
 
+        Long lineCount = jdbc.queryForObject("""
+                SELECT count(*) FROM srm.quotation_line
+                WHERE quotation_version_id = ?
+                """, Long.class, award.quotationVersionId());
+        if (lineCount == null || lineCount == 0) {
+            throw new ResponseStatusException(BAD_REQUEST, "Awarded quotation has no material lines for PIR integration");
+        }
         UUID requestKey = UUID.randomUUID();
         String payload = jdbc.queryForObject("""
                 SELECT jsonb_build_object(
