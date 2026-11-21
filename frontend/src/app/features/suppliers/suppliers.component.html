@@ -1,0 +1,132 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SRM WORKSPACE / SUPPLIERS</span>
+    <h1>Supplier management</h1>
+    <p>Register supplier organizations and maintain their primary business contact.</p>
+  </div>
+  <button class="primary-button" type="button" (click)="showForm = !showForm">
+    {{ showForm ? 'Close form' : '+ Register supplier' }}
+  </button>
+</div>
+
+@if (successMessage) {
+  <div class="notice success" role="status">{{ successMessage }}</div>
+}
+@if (errorMessage) {
+  <div class="notice error" role="alert">{{ errorMessage }}</div>
+}
+
+@if (showForm) {
+  <section class="form-card">
+    <div class="card-heading">
+      <div>
+        <h2>New supplier registration</h2>
+        <p>Enter the legal entity and primary contact details.</p>
+      </div>
+      <span class="draft-tag">Initial status: DRAFT</span>
+    </div>
+
+    <form #supplierForm="ngForm" (ngSubmit)="submit()">
+      <div class="form-section">
+        <h3>Company information</h3>
+        <div class="form-grid">
+          <label class="wide">Legal company name <span>*</span>
+            <input name="legalName" [(ngModel)]="form.legalName" required maxlength="200" placeholder="e.g. ABC Components Private Limited">
+          </label>
+          <label>Trade name
+            <input name="tradeName" [(ngModel)]="form.tradeName" maxlength="200" placeholder="Business / brand name">
+          </label>
+          <label>GSTIN
+            <input name="gstin" [(ngModel)]="form.gstin" maxlength="15" placeholder="15-character GSTIN">
+          </label>
+          <label>PAN
+            <input name="pan" [(ngModel)]="form.pan" maxlength="10" placeholder="10-character PAN">
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Primary contact</h3>
+        <div class="form-grid">
+          <label>Contact person <span>*</span>
+            <input name="contactName" [(ngModel)]="form.contactName" required maxlength="160" placeholder="Full name">
+          </label>
+          <label>Email address <span>*</span>
+            <input name="email" [(ngModel)]="form.email" required email type="email" maxlength="254" placeholder="name@company.com">
+          </label>
+          <label>Phone number
+            <input name="phone" [(ngModel)]="form.phone" maxlength="40" placeholder="+91">
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Registered address <small>Optional</small></h3>
+        <div class="form-grid">
+          <label class="wide">Address line
+            <input name="addressLine1" [(ngModel)]="form.addressLine1" maxlength="200" placeholder="Building, street and area">
+          </label>
+          <label>City
+            <input name="city" [(ngModel)]="form.city" maxlength="100" placeholder="City">
+          </label>
+          <label>State
+            <input name="stateRegion" [(ngModel)]="form.stateRegion" maxlength="100" placeholder="State">
+          </label>
+          <label>Postal code
+            <input name="postalCode" [(ngModel)]="form.postalCode" maxlength="20" placeholder="PIN code">
+          </label>
+          <label>Country code
+            <input name="countryCode" [(ngModel)]="form.countryCode" minlength="2" maxlength="2" placeholder="IN">
+          </label>
+        </div>
+        <p class="helper-text">If you enter an address, City and Country code are required.</p>
+      </div>
+
+      <div class="form-actions">
+        <button class="secondary-button" type="button" (click)="resetForm()">Reset</button>
+        <button class="primary-button" type="submit" [disabled]="supplierForm.invalid || saving">
+          {{ saving ? 'Saving supplier…' : 'Save supplier' }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+
+<section class="list-card">
+  <div class="card-heading">
+    <div>
+      <h2>Registered suppliers</h2>
+      <p>Supplier records maintained in the SRM platform.</p>
+    </div>
+    <span class="record-count">{{ suppliers.length }} records</span>
+  </div>
+
+  @if (loading) {
+    <p class="empty-state">Loading supplier records…</p>
+  } @else if (suppliers.length === 0) {
+    <div class="empty-state">
+      <strong>No suppliers registered yet</strong>
+      <p>Start by registering your first supplier organization.</p>
+      <button class="secondary-button" type="button" (click)="showForm = true">Register first supplier</button>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Supplier</th><th>Supplier ID</th><th>Primary contact</th><th>GSTIN</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          @for (supplier of suppliers; track supplier.supplierId) {
+            <tr>
+              <td><strong>{{ supplier.legalName }}</strong><small>{{ supplier.tradeName || '—' }}</small></td>
+              <td class="supplier-number">{{ supplier.supplierNumber }}</td>
+              <td>{{ supplier.contactName || '—' }}<small>{{ supplier.email || '—' }}</small></td>
+              <td>{{ supplier.gstin || '—' }}</td>
+              <td><span class="status-pill">{{ supplier.lifecycleStatus }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
