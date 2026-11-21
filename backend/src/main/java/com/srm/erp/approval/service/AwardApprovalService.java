@@ -111,6 +111,17 @@ public class AwardApprovalService {
                 VALUES (?, 'AWARD', 1, ?, 'PENDING')
                 RETURNING approval_task_id
                 """, UUID.class, approvalRequestId, request.approverUserId());
+        jdbc.update("""
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT ?, 'APPROVAL_TASK_ASSIGNED', channels.channel, 'QUEUED',
+                       'Award approval required for RFQ ' || r.rfq_number,
+                       'Review the buyer recommendation and record your decision in SRM.',
+                       '/approvals'
+                FROM srm.rfq r
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                WHERE r.rfq_id = ?
+                """, request.approverUserId(), rfqId);
         audit(buyerId, "AWARD_APPROVAL_REQUESTED", "APPROVAL_REQUEST", approvalRequestId,
                 rfqId, "SUCCESS", recommendation.id().toString());
         return new ApprovalTaskRecord(approvalRequestId, taskId, rfqId, null, null,
@@ -187,6 +198,17 @@ public class AwardApprovalService {
                 """, taskId, approverId, decision, blankToNull(request.comments()));
         jdbc.update("UPDATE srm.approval_request SET status = ? WHERE approval_request_id = ?",
                 status, task.approvalRequestId());
+        jdbc.update("""
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT ?, ?, channels.channel, 'QUEUED',
+                       'Award approval update for RFQ ' || r.rfq_number,
+                       ?, '/evaluations'
+                FROM srm.rfq r
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                WHERE r.rfq_id = ?
+                """, task.requestedBy(), "AWARD_APPROVAL_" + status, task.supplierName() + " recommendation was "
+                + status.toLowerCase().replace('_', ' ') + ". " + request.comments(), task.rfqId());
         audit(approverId, "AWARD_" + decision, "APPROVAL_REQUEST", task.approvalRequestId(),
                 task.rfqId(), "SUCCESS", blankToNull(request.comments()));
         return new ApprovalTaskRecord(task.approvalRequestId(), task.approvalTaskId(), task.rfqId(),
@@ -261,13 +283,23 @@ public class AwardApprovalService {
                 rs.getTimestamp("awarded_at").toInstant()), approvalRequestId);
         jdbc.update("UPDATE srm.rfq SET status = 'AWARDED', updated_at = now() WHERE rfq_id = ?", rfqId);
         jdbc.update("""
-                INSERT INTO srm.notification (recipient_user_id, event_type, channel, delivery_status)
-                SELECT m.user_id, CASE WHEN m.supplier_id = ? THEN 'AWARD_SELECTED' ELSE 'AWARD_NOT_SELECTED' END,
-                       'IN_APP', 'QUEUED'
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT m.user_id,
+                       CASE WHEN m.supplier_id = ? THEN 'AWARD_SELECTED' ELSE 'AWARD_NOT_SELECTED' END,
+                       channels.channel, 'QUEUED',
+                       'Award outcome for ' || r.rfq_number,
+                       CASE WHEN m.supplier_id = ?
+                            THEN 'Your organization was selected for this RFQ. Sign in to review the outcome.'
+                            ELSE 'The RFQ award has been recorded. Sign in to review the outcome.'
+                       END,
+                       '/supplier-portal/quotations'
                 FROM srm.rfq_invitation i
                 JOIN srm.supplier_user_membership m ON m.supplier_id = i.supplier_id
+                JOIN srm.rfq r ON r.rfq_id = i.rfq_id
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
                 WHERE i.rfq_id = ? AND m.membership_status = 'ACTIVE'
-                """, task.supplierId(), rfqId);
+                """, task.supplierId(), task.supplierId(), rfqId);
         audit(buyerId, "RFQ_AWARDED", "AWARD", award.awardId(), rfqId, "SUCCESS", task.supplierId().toString());
         return award;
     }

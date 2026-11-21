@@ -23,6 +23,17 @@ spring:
     enabled: true
     default-schema: srm
     schemas: srm
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:25}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:false}
+          starttls:
+            enable: ${SMTP_STARTTLS:false}
 
 management:
   endpoints:
@@ -40,3 +51,10 @@ srm:
     jwt:
       secret: ${SRM_JWT_SECRET:local-development-secret-change-this-before-deployment-2026}
       expiration-seconds: ${SRM_JWT_EXPIRATION_SECONDS:3600}
+  notifications:
+    email:
+      enabled: ${SRM_EMAIL_ENABLED:false}
+      from: ${SRM_EMAIL_FROM:no-reply@srm.local}
+      public-base-url: ${SRM_PUBLIC_BASE_URL:http://localhost:4200}
+      max-attempts: ${SRM_EMAIL_MAX_ATTEMPTS:5}
+      poll-interval-ms: ${SRM_EMAIL_POLL_INTERVAL_MS:30000}
