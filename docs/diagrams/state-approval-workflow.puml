@@ -1,0 +1,40 @@
+@startuml
+title SRM Approval Task - State Machine
+hide empty description
+skinparam shadowing false
+skinparam state {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+
+[*] --> Pending
+Pending --> InReview : Assigned approver opens task
+Pending --> Cancelled : Request withdrawn or superseded
+InReview --> Approved : Approver approves
+InReview --> Rejected : Approver rejects with reason
+InReview --> SentBack : Approver requests changes
+InReview --> OnHold : Approver places on hold with reason
+InReview --> Delegated : Authorized delegation
+Delegated --> Pending : New authorized approver assigned
+SentBack --> Pending : Request revised and resubmitted
+(new task or controlled reactivation)
+OnHold --> Pending : Hold released and task reassigned
+Approved --> [*]
+Rejected --> [*]
+Cancelled --> [*]
+
+note right of InReview
+Only the assigned approver or an
+authorized delegate can act.
+Approval authority comes from configured
+approval rules and assigned limits,
+not merely from an administrator role.
+end note
+
+note bottom of Approved
+Approval decisions are append-only audit events.
+Resubmission must preserve prior decisions,
+remarks, attachments and version history.
+end note
+@enduml
