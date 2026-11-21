@@ -1,0 +1,80 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">BUYER WORKSPACE / QUOTATIONS</span>
+    <h1>Quotation comparison</h1>
+    <p>Review invited suppliers' latest submitted versions, line prices and commercial terms.</p>
+  </div>
+</div>
+
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+
+<section class="selector-card">
+  <label>RFQ to compare
+    <select name="selectedRfqId" [(ngModel)]="selectedRfqId" [disabled]="loadingRfqs || loadingComparison">
+      <option value="">Select one of your RFQs</option>
+      @for (rfq of rfqs; track rfq.rfqId) {
+        <option [value]="rfq.rfqId">{{ rfq.rfqNumber }} · {{ rfq.title }}</option>
+      }
+    </select>
+  </label>
+  <button class="primary-button" type="button" (click)="loadComparison()" [disabled]="!selectedRfqId || loadingComparison">
+    {{ loadingComparison ? 'Loading…' : 'Compare submissions' }}
+  </button>
+</section>
+
+@if (comparison; as data) {
+  <section class="comparison-card">
+    <div class="card-heading">
+      <div><span class="eyebrow">{{ data.rfqNumber }} · {{ data.currencyCode }}</span><h2>{{ data.title }}</h2></div>
+      <span class="deadline">Deadline {{ data.submissionDeadline | date:'medium' }}</span>
+    </div>
+    @if (data.suppliers.length === 0) {
+      <div class="empty-state">This RFQ has no supplier invitations.</div>
+    } @else {
+      <p class="helper-text">Only submitted quotation versions appear below. Drafts stay private to their supplier. Values are shown for review; the system does not select a winner automatically.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Supplier / status</th>
+              <th>Submitted version</th>
+              @for (line of data.rfqLines; track line.rfqLineId) {
+                <th>Line {{ line.lineNumber }}<small>{{ line.sapMaterialCode }}</small></th>
+              }
+              <th>Total landed cost</th>
+              <th>Delivery</th>
+              <th>Validity</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (supplier of data.suppliers; track supplier.supplierId; let supplierIndex = $index) {
+              <tr>
+                <td><strong>{{ supplier.legalName }}</strong><small>{{ supplier.supplierNumber }} · {{ supplier.invitationStatus }}</small></td>
+                <td>{{ supplier.submittedVersion ? 'v' + supplier.submittedVersion : 'Not submitted' }}<small>{{ supplier.submittedAt ? (supplier.submittedAt | date:'short') : '—' }}</small></td>
+                @for (line of data.rfqLines; track line.rfqLineId) {
+                  <td>
+                    @if (quoteFor(supplierIndex, line.rfqLineId); as quote) {
+                      <strong>{{ quote.landedLineTotal | number:'1.2-2' }}</strong>
+                      <small>Net unit {{ quote.netUnitPrice | number:'1.2-4' }}</small>
+                    } @else { <span>—</span> }
+                  </td>
+                }
+                <td>{{ supplier.totalLandedCost === null ? '—' : (supplier.totalLandedCost | number:'1.2-2') }} {{ supplier.totalLandedCost === null ? '' : data.currencyCode }}</td>
+                <td>{{ supplier.leadTimeDays === null ? '—' : supplier.leadTimeDays + ' days' }}</td>
+                <td>{{ supplier.validityDate || '—' }}</td>
+              </tr>
+              @if (supplier.submittedVersion) {
+                <tr class="terms-row"><td colspan="100">
+                  <strong>{{ supplier.supplierNumber }} terms:</strong>
+                  {{ supplier.paymentTerms || 'No payment terms' }} · {{ supplier.incoterms || 'No Incoterms' }}
+                  @if (supplier.technicalDeviations) { <span> · Technical deviations recorded</span> }
+                  @if (supplier.commercialRemarks) { <span> · Commercial remarks recorded</span> }
+                </td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

@@ -1,0 +1,28 @@
+:host { display:block; color:#1d2d42; }
+.page-heading { margin-bottom:22px; }
+.eyebrow { color:#8795a5; font-size:9px; font-weight:800; letter-spacing:.14em; }
+h1 { margin:8px 0 5px; color:#17263b; font-size:clamp(27px,3vw,36px); letter-spacing:-.04em; }
+.page-heading p { margin:0; color:#78889b; font-size:12px; }
+.selector-card,.comparison-card { margin-bottom:16px; padding:20px; border:1px solid #e6ebf1; border-radius:11px; background:#fff; }
+.selector-card { display:flex; align-items:flex-end; gap:12px; }
+label { display:grid; flex:1; gap:6px; color:#53657a; font-size:10px; font-weight:750; }
+select { min-height:38px; padding:7px 10px; border:1px solid #dfe6ed; border-radius:6px; color:#30465e; font:inherit; font-size:11px; }
+.primary-button { min-height:38px; padding:0 14px; border:1px solid #183b5d; border-radius:7px; background:#183b5d; color:#fff; font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+button:disabled { cursor:not-allowed; opacity:.55; }
+.notice.error { margin-bottom:14px; padding:11px 14px; border-radius:7px; background:#fff1f0; color:#a13d36; font-size:11px; }
+.card-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.card-heading h2 { margin:5px 0; color:#17263b; font-size:17px; }
+.deadline,.helper-text { color:#78889b; font-size:10px; }
+.helper-text { margin:0 0 12px; }
+.table-wrap { overflow:auto; }
+table { width:100%; min-width:900px; border-collapse:collapse; text-align:left; }
+th { padding:9px; background:#f7f9fb; color:#8795a5; font-size:9px; text-transform:uppercase; vertical-align:bottom; }
+th small { display:block; margin-top:4px; font-weight:500; text-transform:none; }
+td { padding:10px 9px; border-bottom:1px solid #edf1f5; color:#52657a; font-size:10px; white-space:nowrap; }
+td strong,td small { display:block; }
+td strong { color:#273b51; }
+td small { margin-top:4px; color:#8795a5; font-size:9px; }
+.terms-row td { white-space:normal; background:#fafbfd; color:#66798d; }
+.terms-row td strong { display:inline; margin-right:6px; }
+.empty-state { padding:28px; color:#78889b; text-align:center; font-size:11px; }
+@media(max-width:640px) { .selector-card,.card-heading { align-items:stretch; flex-direction:column; } }
