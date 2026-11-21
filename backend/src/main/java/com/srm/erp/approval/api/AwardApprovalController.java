@@ -27,6 +27,19 @@ public class AwardApprovalController {
                 approvals.requestApproval(rfqId, actorId(), request));
     }
 
+    @GetMapping("/approvals/eligible-approvers")
+    @PreAuthorize("hasRole('PROCUREMENT_BUYER')")
+    public ApiResponse<List<EligibleApproverRecord>> eligibleApprovers() {
+        return ApiResponse.success("Eligible approvers retrieved", approvals.eligibleApprovers(actorId()));
+    }
+
+    @GetMapping("/rfqs/{rfqId}/award-approvals")
+    @PreAuthorize("hasRole('PROCUREMENT_BUYER')")
+    public ApiResponse<List<ApprovalTaskRecord>> rfqApprovalRequests(@PathVariable UUID rfqId) {
+        return ApiResponse.success("RFQ award approval requests retrieved",
+                approvals.rfqRequests(rfqId, actorId()));
+    }
+
     @GetMapping("/approvals/my-tasks")
     @PreAuthorize("hasRole('PROCUREMENT_APPROVER')")
     public ApiResponse<List<ApprovalTaskRecord>> myTasks() {
@@ -39,6 +52,12 @@ public class AwardApprovalController {
             @PathVariable UUID taskId, @Valid @RequestBody ApprovalDecisionRequest request) {
         return ApiResponse.success("Approval decision recorded",
                 approvals.decide(taskId, actorId(), request));
+    }
+
+    @GetMapping("/rfqs/{rfqId}/award")
+    @PreAuthorize("hasRole('PROCUREMENT_BUYER')")
+    public ApiResponse<AwardResponse> awardForRfq(@PathVariable UUID rfqId) {
+        return ApiResponse.success("RFQ award retrieved", approvals.awardForRfq(rfqId, actorId()));
     }
 
     @PostMapping("/rfqs/{rfqId}/award")

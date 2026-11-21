@@ -54,3 +54,9 @@ label span { color:#b54b46; }
 .empty-state { padding:24px; border:1px solid #e6ebf1; border-radius:8px; color:#78889b; text-align:center; font-size:11px; }
 @media(max-width:1000px) { .supplier-grid { grid-template-columns:1fr; } }
 @media(max-width:640px) { .selector-card,.workspace-heading { align-items:stretch; flex-direction:column; } .form-grid { grid-template-columns:1fr; } label.wide { grid-column:auto; } }
+
+.approval-request,.approval-request-status { display:flex; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-top:10px; padding:10px; border:1px solid #e6ebf1; border-radius:7px; background:#f9fbfc; }
+.approval-request label { display:grid; flex:1; min-width:230px; gap:6px; color:#53657a; font-size:10px; font-weight:750; }
+.approval-request select { min-height:35px; padding:7px 9px; border:1px solid #dfe6ed; border-radius:6px; color:#30465e; font:inherit; font-size:10px; }
+.approval-request-status { align-items:center; justify-content:space-between; color:#52657a; font-size:10px; }
+.final-award { border-color:#b9dec7; background:#f4fbf6; }

@@ -111,9 +111,43 @@
           <article><div><strong>{{ recommendation.supplierName }}</strong><span>{{ recommendation.nonL1 ? 'Non-L1 recommendation' : 'L1 by landed-cost comparison' }}</span></div>
             <p>{{ recommendation.justification }}</p>
             <small>Quotation v{{ recommendation.quotationVersion }} · {{ recommendation.recommenderName }} · {{ recommendation.createdAt | date:'medium' }}</small>
+            @if (!finalAward && !hasPendingApproval(recommendation.recommendationId) && eligibleApprovers.length > 0) {
+              <div class="approval-request">
+                <label>Assign approver
+                  <select [name]="'approver-' + recommendation.recommendationId"
+                    [(ngModel)]="selectedApprovers[recommendation.recommendationId]">
+                    <option value="">Select an active procurement approver</option>
+                    @for (approver of eligibleApprovers; track approver.userId) {
+                      @if (approver.userId !== recommendation.recommendedBy) {
+                        <option [value]="approver.userId">{{ approver.fullName }} · {{ approver.email }}</option>
+                      }
+                    }
+                  </select>
+                </label>
+                <button type="button" class="primary-button"
+                  [disabled]="!selectedApprovers[recommendation.recommendationId] || savingWorkflow"
+                  (click)="requestAwardApproval(recommendation.recommendationId)">Request approval</button>
+              </div>
+            }
+            @for (request of requestsFor(recommendation.recommendationId); track request.approvalRequestId) {
+              <div class="approval-request-status">
+                <span>Approval {{ request.status }} · requested by {{ request.requesterName }}</span>
+                @if (request.status === 'APPROVED' && !finalAward) {
+                  <button type="button" class="primary-button" [disabled]="savingWorkflow"
+                    (click)="finalizeAward(request)">Record final award</button>
+                }
+              </div>
+            }
           </article>
         }
       </section>
     }
+  @if (finalAward; as award) {
+    <section class="recommendations-card final-award">
+      <h2>Final award recorded</h2>
+      <p><strong>{{ award.supplierName }}</strong> · quotation v{{ award.versionNumber }}</p>
+      <p>{{ award.approvedValue | number:'1.2-2' }} {{ award.currencyCode }} · {{ award.awardedAt | date:'medium' }}</p>
+    </section>
+  }
   }
 }
