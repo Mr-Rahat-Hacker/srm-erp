@@ -1,17 +1,20 @@
-name: Backend CI
+name: SRM CI
 
 on:
   push:
     paths:
       - "backend/**"
+      - "frontend/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     paths:
       - "backend/**"
+      - "frontend/**"
       - ".github/workflows/backend-ci.yml"
 
 jobs:
-  test:
+  backend:
+    name: Backend tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,5 +28,25 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Run tests
+      - name: Run backend verification
         run: mvn --batch-mode verify
+
+  frontend:
+    name: Angular production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Angular application
+        run: npm run build
