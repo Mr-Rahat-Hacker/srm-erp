@@ -11,12 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -232,11 +230,6 @@ public class RfqService {
         return new RfqInvitationResponse(rs.getObject("supplier_id", UUID.class),
                 rs.getString("supplier_number"), rs.getString("legal_name"), rs.getString("invitation_status"),
                 rs.getTimestamp("invited_at").toInstant());
-    }
-
-    private void writeAudit(UUID actorId, String action, UUID rfqId, UUID supplierId,
-                            String rfqNumber, String status, boolean unused) {
-        writeAudit(actorId, action, rfqId, supplierId, rfqNumber, status);
     }
 
     private String blankToNull(String value) {
