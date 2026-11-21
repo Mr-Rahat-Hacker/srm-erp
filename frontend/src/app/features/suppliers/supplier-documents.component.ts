@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, Input, OnChanges, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +7,7 @@ import { SupplierService } from './supplier.service';
 
 @Component({
   selector: 'app-supplier-documents',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, DecimalPipe, FormsModule],
   templateUrl: './supplier-documents.component.html',
   styleUrl: './supplier-documents.component.scss',
 })
@@ -36,6 +36,10 @@ export class SupplierDocumentsComponent implements OnChanges {
   protected reviewingId = '';
   protected errorMessage = '';
   protected successMessage = '';
+
+  protected get hasPendingReviews(): boolean {
+    return this.documents.some((item) => item.reviewStatus === 'PENDING');
+  }
 
   ngOnChanges(): void {
     if (this.supplierId) this.loadDocuments();
@@ -90,15 +94,15 @@ export class SupplierDocumentsComponent implements OnChanges {
     });
   }
 
-  protected download(document: SupplierDocument): void {
-    this.downloadingId = document.documentId;
+  protected download(fileRecord: SupplierDocument): void {
+    this.downloadingId = fileRecord.documentId;
     this.errorMessage = '';
-    this.supplierService.downloadDocument(this.supplierId, document.documentId).subscribe({
+    this.supplierService.downloadDocument(this.supplierId, fileRecord.documentId).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = globalThis.document.createElement('a');
         link.href = url;
-        link.download = document.originalFilename;
+        link.download = fileRecord.originalFilename;
         link.click();
         URL.revokeObjectURL(url);
         this.downloadingId = '';
@@ -110,13 +114,13 @@ export class SupplierDocumentsComponent implements OnChanges {
     });
   }
 
-  protected review(document: SupplierDocument, decision: 'VERIFY' | 'REJECT'): void {
-    this.reviewingId = document.documentId;
+  protected review(fileRecord: SupplierDocument, decision: 'VERIFY' | 'REJECT'): void {
+    this.reviewingId = fileRecord.documentId;
     this.errorMessage = '';
     this.successMessage = '';
     this.supplierService.reviewDocument(
       this.supplierId,
-      document.documentId,
+      fileRecord.documentId,
       decision,
       this.reviewRemarks.trim(),
     ).subscribe({
