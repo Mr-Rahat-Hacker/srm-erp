@@ -7,6 +7,8 @@ import { QuotationComparisonService } from '../quotations/quotation-comparison.s
 import { EvaluationCreatePayload, RfqEvaluationHistory } from './evaluation.models';
 import { ApprovalTask, AwardRecord, EligibleApprover } from '../approvals/approval.models';
 import { ApprovalService } from '../approvals/approval.service';
+import { SapIntegrationRecord } from './sap-pir.models';
+import { SapPirService } from './sap-pir.service';
 import { EvaluationService } from './evaluation.service';
 
 interface EvaluationDraft {
@@ -27,6 +29,7 @@ export class EvaluationsComponent implements OnInit {
   private readonly comparisons = inject(QuotationComparisonService);
   private readonly evaluations = inject(EvaluationService);
   private readonly approvals = inject(ApprovalService);
+  private readonly sapPir = inject(SapPirService);
 
   protected rfqs: RfqSummary[] = [];
   protected selectedRfqId = '';
@@ -42,6 +45,8 @@ export class EvaluationsComponent implements OnInit {
   protected selectedApprovers: Record<string, string> = {};
   protected finalAward: AwardRecord | null = null;
   protected savingWorkflow = false;
+  protected sapSystemCode = '';
+  protected sapRequests: SapIntegrationRecord[] = [];
 
   protected get submittedSuppliers(): ComparisonSupplier[] {
     return (this.comparison?.suppliers ?? []).filter((supplier) => supplier.submittedVersion !== null);
@@ -139,7 +144,7 @@ export class EvaluationsComponent implements OnInit {
       },
     });
     this.approvals.getAwardForRfq(this.selectedRfqId).subscribe({
-      next: (response) => { this.finalAward = response.data; },
+      next: (response) => { this.finalAward = response.data; if (this.finalAward) this.loadSapRequests(); },
       error: (error: HttpErrorResponse) => {
         this.errorMessage = error.error?.message ?? 'Unable to load the final award.';
       },
@@ -148,6 +153,51 @@ export class EvaluationsComponent implements OnInit {
 
   protected requestsFor(recommendationId: string): ApprovalTask[] {
     return this.approvalRequests.filter((request) => request.recommendationId === recommendationId);
+  }
+
+  private loadSapRequests(): void {
+    if (!this.finalAward) return;
+    this.sapPir.forAward(this.finalAward.awardId).subscribe({
+      next: (response) => { this.sapRequests = response.data ?? []; },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to load SAP integration status.';
+      },
+    });
+  }
+
+  protected queueSapRequest(): void {
+    if (!this.finalAward || !this.sapSystemCode.trim() || this.savingWorkflow) return;
+    this.savingWorkflow = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.sapPir.create(this.finalAward.awardId, this.sapSystemCode.trim()).subscribe({
+      next: (response) => {
+        this.successMessage = response.message;
+        this.savingWorkflow = false;
+        this.loadSapRequests();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to queue the SAP PIR request.';
+        this.savingWorkflow = false;
+      },
+    });
+  }
+
+  protected retrySapRequest(request: SapIntegrationRecord): void {
+    if (this.savingWorkflow) return;
+    this.savingWorkflow = true;
+    this.errorMessage = '';
+    this.sapPir.retry(request.integrationEventId).subscribe({
+      next: (response) => {
+        this.successMessage = response.message;
+        this.savingWorkflow = false;
+        this.loadSapRequests();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to retry the SAP PIR request.';
+        this.savingWorkflow = false;
+      },
+    });
   }
 
   protected hasPendingApproval(recommendationId: string): boolean {
@@ -183,6 +233,7 @@ export class EvaluationsComponent implements OnInit {
       next: (response) => {
         this.finalAward = response.data;
         this.successMessage = response.message;
+        this.loadSapRequests();
         this.savingWorkflow = false;
       },
       error: (error: HttpErrorResponse) => {
