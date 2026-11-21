@@ -78,7 +78,7 @@
         </tbody>
       </table>
     </div>
-    @if (documents.some(isPending)) {
+    @if (hasPendingReviews) {
       <label class="remarks-input">Reviewer remarks <span>Required to reject a document</span>
         <textarea name="reviewRemarks" [(ngModel)]="reviewRemarks" maxlength="2000" rows="2"
           placeholder="Add a reason before rejecting, or an optional note before verification"></textarea>
