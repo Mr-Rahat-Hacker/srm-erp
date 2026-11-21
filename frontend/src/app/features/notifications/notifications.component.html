@@ -1,0 +1,29 @@
+<section class="page-heading">
+  <span class="eyebrow">WORKSPACE</span>
+  <h1>Notifications</h1>
+  <p>Workflow updates linked to your authenticated SRM account.</p>
+</section>
+
+@if (error) { <div class="notice error" role="alert">{{ error }}</div> }
+@if (loading) {
+  <section class="empty-state">Loading notifications…</section>
+} @else if (!items.length) {
+  <section class="empty-state"><strong>You are all caught up</strong><p>New RFQ, negotiation and award updates will appear here.</p></section>
+} @else {
+  <section class="notification-list">
+    @for (item of items; track item.notificationId) {
+      <article class="notification" [class.unread]="!item.readAt">
+        <div class="notification-copy">
+          <div class="meta"><strong>{{ item.title || item.eventType.replaceAll('_', ' ') }}</strong>
+            <span>{{ item.createdAt | date:'medium' }}</span></div>
+          <p>{{ item.body || item.eventType }}</p>
+          <small>{{ item.deliveryStatus }} @if (item.sentAt) { · Email sent {{ item.sentAt | date:'short' }} }</small>
+        </div>
+        <div class="actions">
+          @if (!item.readAt) { <button type="button" (click)="markRead(item)">Mark read</button> }
+          @if (item.targetPath) { <a [routerLink]="item.targetPath" (click)="markRead(item)">Open</a> }
+        </div>
+      </article>
+    }
+  </section>
+}
