@@ -32,14 +32,15 @@ public class NotificationService {
     }
 
     public NotificationRecord markRead(UUID notificationId, UUID recipientId) {
-        return jdbc.query("""
+        NotificationRecord record = jdbc.query("""
                 UPDATE srm.notification
                 SET read_at = COALESCE(read_at, now())
                 WHERE notification_id = ? AND recipient_user_id = ? AND channel = 'IN_APP'
                 RETURNING notification_id, event_type, title, body, target_path, delivery_status,
                           created_at, sent_at, read_at, retry_count, last_error
-                """, rs -> rs.next() ? map(rs) : null, notificationId, recipientId)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Notification not found"));
+                """, rs -> rs.next() ? map(rs) : null, notificationId, recipientId);
+        if (record == null) throw new ResponseStatusException(NOT_FOUND, "Notification not found");
+        return record;
     }
 
     private NotificationRecord map(ResultSet rs) throws SQLException {
