@@ -195,6 +195,26 @@ public class AwardApprovalService {
                 task.justification(), task.requestedBy(), task.requesterName(), status, task.createdAt(), task.dueAt());
     }
 
+    public AwardResponse awardForRfq(UUID rfqId, UUID buyerId) {
+        requireBuyerOwnsRfq(rfqId, buyerId);
+        return jdbc.query("""
+                SELECT a.award_id, a.rfq_id, r.rfq_number, a.supplier_id, s.legal_name,
+                       a.quotation_version_id, v.version_number, a.approval_request_id,
+                       a.approved_value, a.currency_code, a.award_status, a.awarded_at
+                FROM srm.award a
+                JOIN srm.rfq r ON r.rfq_id = a.rfq_id
+                JOIN srm.supplier_organization s ON s.supplier_id = a.supplier_id
+                JOIN srm.quotation_version v ON v.quotation_version_id = a.quotation_version_id
+                WHERE a.rfq_id = ?
+                """, rs -> rs.next() ? new AwardResponse(rs.getObject("award_id", UUID.class),
+                rs.getObject("rfq_id", UUID.class), rs.getString("rfq_number"),
+                rs.getObject("supplier_id", UUID.class), rs.getString("legal_name"),
+                rs.getObject("quotation_version_id", UUID.class), rs.getInt("version_number"),
+                rs.getObject("approval_request_id", UUID.class), rs.getBigDecimal("approved_value"),
+                rs.getString("currency_code"), rs.getString("award_status"),
+                rs.getTimestamp("awarded_at").toInstant()) : null, rfqId);
+    }
+
     @Transactional
     public AwardResponse award(UUID rfqId, UUID buyerId, UUID approvalRequestId) {
         requireBuyerOwnsRfq(rfqId, buyerId);
