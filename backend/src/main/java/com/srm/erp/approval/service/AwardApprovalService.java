@@ -261,13 +261,23 @@ public class AwardApprovalService {
                 rs.getTimestamp("awarded_at").toInstant()), approvalRequestId);
         jdbc.update("UPDATE srm.rfq SET status = 'AWARDED', updated_at = now() WHERE rfq_id = ?", rfqId);
         jdbc.update("""
-                INSERT INTO srm.notification (recipient_user_id, event_type, channel, delivery_status)
-                SELECT m.user_id, CASE WHEN m.supplier_id = ? THEN 'AWARD_SELECTED' ELSE 'AWARD_NOT_SELECTED' END,
-                       'IN_APP', 'QUEUED'
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT m.user_id,
+                       CASE WHEN m.supplier_id = ? THEN 'AWARD_SELECTED' ELSE 'AWARD_NOT_SELECTED' END,
+                       channels.channel, 'QUEUED',
+                       'Award outcome for ' || r.rfq_number,
+                       CASE WHEN m.supplier_id = ?
+                            THEN 'Your organization was selected for this RFQ. Sign in to review the outcome.'
+                            ELSE 'The RFQ award has been recorded. Sign in to review the outcome.'
+                       END,
+                       '/supplier-portal/quotations'
                 FROM srm.rfq_invitation i
                 JOIN srm.supplier_user_membership m ON m.supplier_id = i.supplier_id
+                JOIN srm.rfq r ON r.rfq_id = i.rfq_id
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
                 WHERE i.rfq_id = ? AND m.membership_status = 'ACTIVE'
-                """, task.supplierId(), rfqId);
+                """, task.supplierId(), task.supplierId(), rfqId);
         audit(buyerId, "RFQ_AWARDED", "AWARD", award.awardId(), rfqId, "SUCCESS", task.supplierId().toString());
         return award;
     }
