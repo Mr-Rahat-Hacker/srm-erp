@@ -1,0 +1,39 @@
+<section class="page-heading">
+  <span class="eyebrow">SRM INSIGHTS</span>
+  <h1>Reports & dashboard</h1>
+  <p>Live workflow totals filtered to your role and record access.</p>
+</section>
+
+@if (error) { <div class="notice error" role="alert">{{ error }}</div> }
+@if (loading) {
+  <section class="empty-state">Loading dashboard metrics…</section>
+} @else if (dashboard; as data) {
+  <div class="audience-tag">{{ data.audience === 'SUPPLIER' ? 'Supplier workspace' : 'Internal workspace' }}</div>
+  <section class="metric-grid" aria-label="SRM workflow metrics">
+    <article><span>Supplier invitations</span><strong>{{ data.supplierInvitations | number }}</strong></article>
+    <article><span>Active RFQs</span><strong>{{ data.activeRfqs | number }}</strong></article>
+    <article><span>Submitted quotations</span><strong>{{ data.submittedQuotations | number }}</strong></article>
+    <article><span>Open negotiations</span><strong>{{ data.openNegotiations | number }}</strong></article>
+    @if (data.audience === 'INTERNAL') {
+      <article><span>Pending approvals</span><strong>{{ data.pendingApprovals | number }}</strong></article>
+    }
+    <article><span>Recorded awards</span><strong>{{ data.awards | number }}</strong></article>
+  </section>
+
+  @if (data.supplierStatuses && statuses(data.supplierStatuses).length > 0) {
+    <section class="status-card">
+      <h2>Supplier onboarding</h2>
+      @for (item of statuses(data.supplierStatuses); track item.label) {
+        <div class="status-row"><span>{{ item.label.replaceAll('_', ' ') }}</span><strong>{{ item.value | number }}</strong></div>
+      }
+    </section>
+  }
+  @if (data.rfqStatuses && statuses(data.rfqStatuses).length > 0) {
+    <section class="status-card">
+      <h2>RFQ lifecycle</h2>
+      @for (item of statuses(data.rfqStatuses); track item.label) {
+        <div class="status-row"><span>{{ item.label.replaceAll('_', ' ') }}</span><strong>{{ item.value | number }}</strong></div>
+      }
+    </section>
+  }
+}
