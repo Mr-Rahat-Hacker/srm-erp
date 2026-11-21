@@ -15,6 +15,10 @@ export class ApprovalService {
     return this.http.get<ApiResponse<ApprovalTask[]>>(`/api/v1/rfqs/${rfqId}/award-approvals`);
   }
 
+  getAwardForRfq(rfqId: string): Observable<ApiResponse<AwardRecord | null>> {
+    return this.http.get<ApiResponse<AwardRecord | null>>(`/api/v1/rfqs/${rfqId}/award`);
+  }
+
   requestApproval(rfqId: string, recommendationId: string, approverUserId: string): Observable<ApiResponse<ApprovalTask>> {
     return this.http.post<ApiResponse<ApprovalTask>>(`/api/v1/rfqs/${rfqId}/award-approvals`,
       { recommendationId, approverUserId });
