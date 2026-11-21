@@ -147,6 +147,31 @@
       <h2>Final award recorded</h2>
       <p><strong>{{ award.supplierName }}</strong> · quotation v{{ award.versionNumber }}</p>
       <p>{{ award.approvedValue | number:'1.2-2' }} {{ award.currencyCode }} · {{ award.awardedAt | date:'medium' }}</p>
+      <div class="sap-pir-panel">
+        <h3>SAP Purchase Info Record</h3>
+        <p>Queue a controlled PIR upsert through the configured integration gateway. An active SAP Vendor Code mapping is required.</p>
+        @if (sapRequests.length === 0) {
+          <div class="sap-request-form">
+            <label>SAP system code
+              <input name="sapSystemCode" [(ngModel)]="sapSystemCode" maxlength="40" placeholder="Configured SAP system">
+            </label>
+            <button type="button" class="primary-button" [disabled]="!sapSystemCode.trim() || savingWorkflow"
+              (click)="queueSapRequest()">Queue PIR request</button>
+          </div>
+        }
+        @for (request of sapRequests; track request.integrationEventId) {
+          <div class="sap-request-status">
+            <div><strong>{{ request.status }}</strong><small>Request {{ request.requestKey }} · attempts {{ request.attemptCount }}</small>
+              @if (request.externalReference) { <small>Gateway reference {{ request.externalReference }}</small> }
+              @if (request.sanitizedError) { <small class="error-text">{{ request.sanitizedError }}</small> }
+            </div>
+            @if (request.status === 'FAILED') {
+              <button type="button" class="primary-button" [disabled]="savingWorkflow"
+                (click)="retrySapRequest(request)">Retry</button>
+            }
+          </div>
+        }
+      </div>
     </section>
   }
   }
