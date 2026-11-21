@@ -114,6 +114,7 @@
       <div><span>Phone</span><strong>{{ supplier.phone || '—' }}</strong></div>
       <div><span>Created</span><strong>{{ supplier.createdAt | date:'medium' }}</strong></div>
     </div>
+    <app-supplier-documents [supplierId]="supplier.supplierId" />
   </section>
 }
 
