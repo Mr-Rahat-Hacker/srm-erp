@@ -149,6 +149,122 @@ public class AwardApprovalService {
                 """, (rs, row) -> mapTask(rs), approverId);
     }
 
+    public ApprovalReviewContext reviewContext(UUID taskId, UUID approverId) {
+        ApprovalTaskRecord task = jdbc.query("""
+                SELECT ar.approval_request_id, at.approval_task_id, r.rfq_id, r.rfq_number, r.title,
+                       sr.recommendation_id, s.supplier_id, s.supplier_number, s.legal_name,
+                       v.quotation_version_id, v.version_number, sr.justification,
+                       ar.requested_by, requester.full_name AS requester_name, ar.status,
+                       ar.created_at, at.due_at
+                FROM srm.approval_task at
+                JOIN srm.approval_request ar ON ar.approval_request_id = at.approval_request_id
+                JOIN srm.supplier_recommendation sr ON sr.recommendation_id = ar.entity_id
+                JOIN srm.rfq r ON r.rfq_id = sr.rfq_id
+                JOIN srm.supplier_organization s ON s.supplier_id = sr.supplier_id
+                JOIN srm.quotation_version v ON v.quotation_version_id = sr.quotation_version_id
+                JOIN srm.app_user requester ON requester.user_id = ar.requested_by
+                WHERE at.approval_task_id = ? AND at.assigned_user_id = ?
+                  AND ar.entity_type = 'AWARD'
+                """, rs -> rs.next() ? mapTask(rs) : null, taskId, approverId);
+        if (task == null) throw new ResponseStatusException(NOT_FOUND, "Assigned approval task not found");
+
+        ApprovalReviewContext.RfqContext rfq = jdbc.query("""
+                SELECT rfq_id, rfq_number, title, description, currency_code, submission_deadline,
+                       required_delivery_date, payment_terms, incoterms, plant_code, purchasing_group
+                FROM srm.rfq WHERE rfq_id = ?
+                """, rs -> rs.next() ? new ApprovalReviewContext.RfqContext(
+                rs.getObject("rfq_id", UUID.class), rs.getString("rfq_number"), rs.getString("title"),
+                rs.getString("description"), rs.getString("currency_code"),
+                rs.getTimestamp("submission_deadline").toInstant(),
+                rs.getDate("required_delivery_date") == null ? null : rs.getDate("required_delivery_date").toLocalDate(),
+                rs.getString("payment_terms"), rs.getString("incoterms"), rs.getString("plant_code"),
+                rs.getString("purchasing_group")) : null, task.rfqId());
+        List<ApprovalReviewContext.QuotationContext> quotations = jdbc.query("""
+                SELECT s.supplier_id, s.supplier_number, s.legal_name, v.quotation_version_id,
+                       v.version_number, v.submitted_at, v.currency_code, v.total_landed_cost,
+                       v.lead_time_days, v.validity_date, v.incoterms, q.technical_deviations
+                FROM srm.quotation q
+                JOIN srm.supplier_organization s ON s.supplier_id = q.supplier_id
+                JOIN LATERAL (
+                    SELECT * FROM srm.quotation_version version
+                    WHERE version.quotation_id = q.quotation_id AND version.version_status = 'SUBMITTED'
+                    ORDER BY version.version_number DESC LIMIT 1
+                ) v ON true
+                WHERE q.rfq_id = ?
+                ORDER BY s.legal_name
+                """, (rs, row) -> new ApprovalReviewContext.QuotationContext(
+                rs.getObject("supplier_id", UUID.class), rs.getString("supplier_number"),
+                rs.getString("legal_name"), rs.getObject("quotation_version_id", UUID.class),
+                rs.getInt("version_number"),
+                rs.getTimestamp("submitted_at") == null ? null : rs.getTimestamp("submitted_at").toInstant(),
+                rs.getString("currency_code"), rs.getBigDecimal("total_landed_cost"),
+                rs.getObject("lead_time_days", Integer.class),
+                rs.getDate("validity_date") == null ? null : rs.getDate("validity_date").toLocalDate(),
+                rs.getString("incoterms"), rs.getString("technical_deviations"),
+                quotationLines(rs.getObject("quotation_version_id", UUID.class))), task.rfqId());
+        List<ApprovalReviewContext.NegotiationActivity> negotiations = jdbc.query("""
+                SELECT n.supplier_id, s.legal_name, n.round_number, n.status AS round_status,
+                       n.response_deadline, n.outcome, n.outcome_remarks, u.full_name AS sender_name,
+                       m.message_type, m.message_text, m.created_at AS message_created_at,
+                       v.version_number AS quotation_version
+                FROM srm.negotiation_round n
+                JOIN srm.supplier_organization s ON s.supplier_id = n.supplier_id
+                LEFT JOIN srm.negotiation_message m ON m.negotiation_round_id = n.negotiation_round_id
+                LEFT JOIN srm.app_user u ON u.user_id = m.sender_user_id
+                LEFT JOIN srm.quotation_version v ON v.quotation_version_id = m.quotation_version_id
+                WHERE n.rfq_id = ?
+                ORDER BY n.round_number, m.created_at
+                """, (rs, row) -> new ApprovalReviewContext.NegotiationActivity(
+                rs.getObject("supplier_id", UUID.class), rs.getString("legal_name"),
+                rs.getInt("round_number"), rs.getString("round_status"),
+                rs.getTimestamp("response_deadline") == null ? null : rs.getTimestamp("response_deadline").toInstant(),
+                rs.getString("outcome"), rs.getString("outcome_remarks"), rs.getString("sender_name"),
+                rs.getString("message_type"), rs.getString("message_text"),
+                rs.getTimestamp("message_created_at") == null ? null : rs.getTimestamp("message_created_at").toInstant(),
+                rs.getObject("quotation_version", Integer.class)), task.rfqId());
+        List<ApprovalReviewContext.EvaluationContext> evaluations = jdbc.query("""
+                SELECT s.supplier_id, s.legal_name, v.version_number, 'TECHNICAL' AS evaluation_type,
+                       t.technical_status AS result, u.full_name AS evaluator_name, t.remarks, t.evaluated_at
+                FROM srm.technical_evaluation t
+                JOIN srm.quotation_version v ON v.quotation_version_id = t.quotation_version_id
+                JOIN srm.quotation q ON q.quotation_id = v.quotation_id
+                JOIN srm.supplier_organization s ON s.supplier_id = q.supplier_id
+                JOIN srm.app_user u ON u.user_id = t.evaluator_user_id
+                WHERE q.rfq_id = ?
+                UNION ALL
+                SELECT s.supplier_id, s.legal_name, v.version_number, 'COMMERCIAL',
+                       c.comparison_basis, u.full_name, c.remarks, c.evaluated_at
+                FROM srm.commercial_evaluation c
+                JOIN srm.quotation_version v ON v.quotation_version_id = c.quotation_version_id
+                JOIN srm.quotation q ON q.quotation_id = v.quotation_id
+                JOIN srm.supplier_organization s ON s.supplier_id = q.supplier_id
+                JOIN srm.app_user u ON u.user_id = c.evaluator_user_id
+                WHERE q.rfq_id = ?
+                ORDER BY evaluated_at DESC
+                """, (rs, row) -> new ApprovalReviewContext.EvaluationContext(
+                rs.getObject("supplier_id", UUID.class), rs.getString("legal_name"),
+                rs.getInt("version_number"), rs.getString("evaluation_type"), rs.getString("result"),
+                rs.getString("evaluator_name"), rs.getString("remarks"),
+                rs.getTimestamp("evaluated_at").toInstant()), task.rfqId(), task.rfqId());
+        return new ApprovalReviewContext(rfq, task, quotations, negotiations, evaluations);
+    }
+
+    private List<ApprovalReviewContext.QuotationLineContext> quotationLines(UUID versionId) {
+        return jdbc.query("""
+                SELECT l.line_number, l.sap_material_code, l.description, l.quantity, l.uom_code,
+                       ql.basic_unit_price, ql.net_unit_price, ql.tax_amount,
+                       ql.freight_amount, ql.landed_line_total
+                FROM srm.quotation_line ql
+                JOIN srm.rfq_line l ON l.rfq_line_id = ql.rfq_line_id
+                WHERE ql.quotation_version_id = ?
+                ORDER BY l.line_number
+                """, (rs, row) -> new ApprovalReviewContext.QuotationLineContext(
+                rs.getInt("line_number"), rs.getString("sap_material_code"), rs.getString("description"),
+                rs.getBigDecimal("quantity"), rs.getString("uom_code"), rs.getBigDecimal("basic_unit_price"),
+                rs.getBigDecimal("net_unit_price"), rs.getBigDecimal("tax_amount"),
+                rs.getBigDecimal("freight_amount"), rs.getBigDecimal("landed_line_total")), versionId);
+    }
+
     @Transactional
     public ApprovalTaskRecord decide(UUID taskId, UUID approverId, ApprovalDecisionRequest request) {
         if (request == null || request.decision() == null) {
