@@ -11,9 +11,14 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: srm
     open-in-view: false
   flyway:
     enabled: true
+    default-schema: srm
+    schemas: srm
 
 management:
   endpoints:
