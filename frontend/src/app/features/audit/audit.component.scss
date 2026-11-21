@@ -1,0 +1,26 @@
+:host { display:block; color:#1d2d42; }
+.page-heading { margin-bottom:20px; }
+.eyebrow { color:#8795a5; font-size:9px; font-weight:800; letter-spacing:.14em; }
+h1 { margin:8px 0 5px; color:#17263b; font-size:clamp(27px,3vw,36px); letter-spacing:-.04em; }
+.page-heading p { margin:0; color:#78889b; font-size:12px; }
+.notice { margin-bottom:12px; padding:10px 13px; border-radius:7px; font-size:11px; }
+.notice.error { background:#fff1f0; color:#a13d36; }
+.filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:16px; border:1px solid #e6ebf1; border-radius:10px; background:#fff; }
+.filters label { display:grid; gap:6px; color:#53657a; font-size:10px; font-weight:750; }
+.filters input { box-sizing:border-box; min-height:35px; width:100%; padding:7px 9px; border:1px solid #dfe6ed; border-radius:6px; color:#30465e; font:inherit; font-size:10px; }
+.filters button { align-self:end; min-height:35px; border:0; border-radius:6px; background:#183b5d; color:white; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
+.filters button:disabled { opacity:.55; }
+.results { margin-top:18px; padding:16px; border:1px solid #e6ebf1; border-radius:10px; background:#fff; }
+.results header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.results h2 { margin:0 0 12px; font-size:15px; }
+.results header span,.empty { color:#78889b; font-size:10px; }
+.table-wrap { overflow:auto; }
+table { width:100%; border-collapse:collapse; font-size:10px; }
+th { padding:9px; background:#f7f9fb; color:#728298; text-align:left; font-size:9px; text-transform:uppercase; }
+td { padding:10px 9px; border-top:1px solid #edf1f5; vertical-align:top; color:#3c5168; }
+td strong,td small { display:block; }
+td small { margin-top:4px; color:#8795a5; overflow-wrap:anywhere; }
+details { margin-top:5px; }
+summary { color:#315c80; cursor:pointer; }
+pre { max-width:320px; white-space:pre-wrap; overflow-wrap:anywhere; color:#52657a; }
+@media (max-width:720px) { .filters { grid-template-columns:1fr 1fr; } }
