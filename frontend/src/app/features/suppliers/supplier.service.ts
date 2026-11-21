@@ -5,6 +5,7 @@ import {
   ApiResponse,
   Supplier,
   SupplierDocument,
+  SupplierLifecycleResult,
   SupplierRegistration,
 } from './supplier.models';
 
@@ -24,6 +25,31 @@ export class SupplierService {
 
   registerSupplier(payload: SupplierRegistration): Observable<ApiResponse<Supplier>> {
     return this.http.post<ApiResponse<Supplier>>(`${API_BASE_URL}/suppliers`, payload);
+  }
+
+  submitSupplier(supplierId: string): Observable<ApiResponse<SupplierLifecycleResult>> {
+    return this.http.post<ApiResponse<SupplierLifecycleResult>>(
+      `${API_BASE_URL}/suppliers/${supplierId}/submit`,
+      {},
+    );
+  }
+
+  startSupplierReview(supplierId: string): Observable<ApiResponse<SupplierLifecycleResult>> {
+    return this.http.post<ApiResponse<SupplierLifecycleResult>>(
+      `${API_BASE_URL}/suppliers/${supplierId}/start-review`,
+      {},
+    );
+  }
+
+  decideSupplier(
+    supplierId: string,
+    decision: 'APPROVE' | 'RETURN' | 'REJECT',
+    remarks: string,
+  ): Observable<ApiResponse<SupplierLifecycleResult>> {
+    return this.http.post<ApiResponse<SupplierLifecycleResult>>(
+      `${API_BASE_URL}/suppliers/${supplierId}/decision`,
+      { decision, remarks },
+    );
   }
 
   getDocuments(supplierId: string): Observable<ApiResponse<SupplierDocument[]>> {
