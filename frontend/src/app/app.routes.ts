@@ -8,6 +8,7 @@ import { BuyerNegotiationsComponent } from './features/negotiations/buyer-negoti
 import { SupplierNegotiationsComponent } from './features/negotiations/supplier-negotiations.component';
 import { EvaluationsComponent } from './features/evaluations/evaluations.component';
 import { ApprovalsComponent } from './features/approvals/approvals.component';
+import { AuditComponent } from './features/audit/audit.component';
 import { ModulePlaceholderComponent } from './shared/components/module-placeholder/module-placeholder.component';
 import { LoginComponent } from './features/auth/login.component';
 import { authGuard } from './core/auth/auth.guard';
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'negotiations', component: BuyerNegotiationsComponent, canActivate: [authGuard] },
   { path: 'evaluations', component: EvaluationsComponent, canActivate: [authGuard] },
   { path: 'approvals', component: ApprovalsComponent, canActivate: [authGuard] },
+  { path: 'audit', component: AuditComponent, canActivate: [authGuard] },
   { path: 'reports', component: ModulePlaceholderComponent, canActivate: [authGuard], data: { title: 'Reports & Audit', description: 'Explore SRM activity, workflow history and audit records.', status: 'Planned module' } },
   { path: '**', redirectTo: 'dashboard' },
 ];

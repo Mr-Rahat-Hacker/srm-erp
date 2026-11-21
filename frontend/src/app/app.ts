@@ -32,6 +32,9 @@ export class App {
     if (roles.includes('PROCUREMENT_APPROVER')) {
       items.push({ label: 'Approvals', path: '/approvals', icon: '✓' });
     }
+    if (roles.some((role) => ['AUDITOR', 'SRM_ADMIN', 'SUPER_ADMIN', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER'].includes(role))) {
+      items.push({ label: 'Audit trail', path: '/audit', icon: '≋' });
+    }
     items.push({ label: 'Reports', path: '/reports', icon: '▥' });
     return items;
   }
