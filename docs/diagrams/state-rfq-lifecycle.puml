@@ -1,0 +1,51 @@
+@startuml
+title SRM RFQ Lifecycle - State Machine
+hide empty description
+skinparam shadowing false
+skinparam state {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+
+[*] --> Draft : Buyer creates RFQ
+Draft --> ValidationFailed : Required data invalid
+ValidationFailed --> Draft : Buyer corrects data
+Draft --> PendingApproval : Submit for configured approval
+Draft --> Published : Publish without approval
+when policy permits
+
+state "Pending Approval" as PendingApproval
+PendingApproval --> Approved : Required approvers approve
+PendingApproval --> ChangesRequested : Send back
+PendingApproval --> Rejected : Reject
+ChangesRequested --> Draft : Buyer revises and resubmits
+Rejected --> [*] : Close rejected RFQ
+
+Approved --> Published : Publish RFQ
+Published --> OpenForResponse : Invitations issued
+OpenForResponse --> Extended : Authorized deadline extension
+Extended --> OpenForResponse : New deadline becomes effective
+OpenForResponse --> Evaluation : Deadline reached
+or authorized early close
+OpenForResponse --> Cancelled : Cancel with reason
+Published --> Cancelled : Cancel before response window
+Evaluation --> Negotiation : Evaluation complete
+and negotiation required
+Evaluation --> AwardPending : No negotiation required
+Negotiation --> AwardPending : Final commercial position recorded
+AwardPending --> Awarded : Award approved and recorded
+AwardPending --> Evaluation : Returned for re-evaluation
+Awarded --> Closed : Notifications and closure checks complete
+Evaluation --> Cancelled : Cancel with authorization
+Negotiation --> Cancelled : Cancel with authorization
+Cancelled --> [*]
+Closed --> [*]
+
+note right of OpenForResponse
+Supplier responses remain confidential.
+Deadline lock, extension permissions,
+minimum response rules and exception
+handling are policy-controlled.
+end note
+@enduml
