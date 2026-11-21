@@ -27,6 +27,13 @@ export interface Supplier {
   createdAt: string;
 }
 
+export interface SupplierLifecycleResult {
+  supplierId: string;
+  previousStatus: string;
+  currentStatus: string;
+  action: string;
+}
+
 export interface SupplierDocument {
   documentId: string;
   supplierId: string;
