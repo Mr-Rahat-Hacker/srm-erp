@@ -20,7 +20,12 @@
 .topbar-title { margin-top: 4px; color: #34465b; font-size: 12px; font-weight: 600; }
 .user-area { display: flex; align-items: center; gap: 13px; }
 .environment-tag { padding: 6px 9px; border: 1px solid #e3eaf1; border-radius: 6px; color: #728297; font-size: 9px; font-weight: 750; letter-spacing: .06em; }
+.user-identity { display: grid; gap: 3px; text-align: right; }
+.user-name { color: #34465b; font-size: 11px; font-weight: 750; }
+.user-role { color: #8794a3; font-size: 9px; }
 .avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #e9eff5; color: #31516f; font-size: 12px; font-weight: 800; }
+.logout-button { min-height: 32px; padding: 0 11px; border: 1px solid #dce4ec; border-radius: 6px; background: #fff; color: #52677c; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.logout-button:hover { background: #f4f7fa; color: #183b5d; }
 .page-content { max-width: 1440px; margin: 0 auto; padding: 34px; }
 @media (max-width: 800px) {
   .sidebar { width: 72px; padding-inline: 10px; }
@@ -30,5 +35,6 @@
   .main-area { width: calc(100% - 72px); margin-left: 72px; }
   .topbar { padding-inline: 18px; }
   .page-content { padding: 24px 18px; }
+  .user-identity { display: none; }
 }
-@media (max-width: 480px) { .environment-tag { display: none; } }
+@media (max-width: 480px) { .environment-tag { display: none; } .user-area { gap: 7px; } .logout-button { padding-inline: 8px; } }

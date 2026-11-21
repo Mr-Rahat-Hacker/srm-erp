@@ -21,7 +21,17 @@
   <main class="main-area">
     <header class="topbar">
       <div><span class="eyebrow">SRM WORKSPACE</span><div class="topbar-title">Procurement collaboration platform</div></div>
-      <div class="user-area"><span class="environment-tag">LOCAL / CLOUD DEV</span><span class="avatar" aria-label="Development user">D</span></div>
+      <div class="user-area">
+        <span class="environment-tag">LOCAL / CLOUD DEV</span>
+        @if (currentUser; as user) {
+          <div class="user-identity">
+            <span class="user-name">{{ user.fullName }}</span>
+            <span class="user-role">{{ user.roles.join(' · ') }}</span>
+          </div>
+          <span class="avatar" [attr.aria-label]="user.fullName">{{ userInitial }}</span>
+          <button class="logout-button" type="button" (click)="logout()">Logout</button>
+        }
+      </div>
     </header>
     <section class="page-content"><router-outlet /></section>
   </main>
