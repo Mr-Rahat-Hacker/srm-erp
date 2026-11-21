@@ -1,0 +1,88 @@
+<section class="documents-card" aria-label="Supplier documents">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">SUPPLIER COMPLIANCE</span>
+      <h3>Documents</h3>
+      <p>Upload and review supplier certificates. Each replacement is stored as a new version.</p>
+    </div>
+    <button class="secondary-button" type="button" (click)="loadDocuments()" [disabled]="loading">
+      {{ loading ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </div>
+
+  @if (successMessage) {
+    <div class="notice success" role="status">{{ successMessage }}</div>
+  }
+  @if (errorMessage) {
+    <div class="notice error" role="alert">{{ errorMessage }}</div>
+  }
+
+  <form class="upload-form" (ngSubmit)="upload()">
+    <label>Document type
+      <select name="documentType" [(ngModel)]="documentType">
+        @for (type of documentTypes; track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+    </label>
+    <label>File <span>PDF, PNG or JPEG · max 10 MB</span>
+      <input name="file" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+        (change)="selectFile($event)" required>
+    </label>
+    <label>Expiry date <span>Optional</span>
+      <input name="expiryDate" type="date" [(ngModel)]="expiryDate">
+    </label>
+    <button class="primary-button" type="submit" [disabled]="!selectedFile || uploading">
+      {{ uploading ? 'Uploading…' : 'Upload document' }}
+    </button>
+  </form>
+  @if (selectedFile) {
+    <p class="selected-file">Selected: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024) | number:'1.1-1' }} MB)</p>
+  }
+
+  @if (loading && documents.length === 0) {
+    <p class="empty-state">Loading supplier documents…</p>
+  } @else if (documents.length === 0) {
+    <div class="empty-state">No documents uploaded for this supplier yet.</div>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Document</th><th>Version</th><th>Status</th><th>Expiry</th><th>Uploaded</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          @for (item of documents; track item.documentId) {
+            <tr>
+              <td><strong>{{ labelFor(item.documentType) }}</strong><small>{{ item.originalFilename }}</small>
+                @if (item.reviewRemarks) { <small class="remarks">Review: {{ item.reviewRemarks }}</small> }
+              </td>
+              <td>v{{ item.versionNumber }}</td>
+              <td><span class="status-pill" [class.pending]="item.reviewStatus === 'PENDING'"
+                [class.verified]="item.reviewStatus === 'VERIFIED'"
+                [class.rejected]="item.reviewStatus === 'REJECTED'">{{ item.reviewStatus }}</span></td>
+              <td>{{ item.expiryDate || '—' }}</td>
+              <td>{{ item.uploadedAt | date:'mediumDate' }}</td>
+              <td class="actions">
+                <button class="text-button" type="button" (click)="download(item)" [disabled]="downloadingId === item.documentId">
+                  {{ downloadingId === item.documentId ? 'Preparing…' : 'Download' }}
+                </button>
+                @if (item.reviewStatus === 'PENDING') {
+                  <button class="text-button approve" type="button" (click)="review(item, 'VERIFY')"
+                    [disabled]="reviewingId === item.documentId">Verify</button>
+                  <button class="text-button reject" type="button" (click)="review(item, 'REJECT')"
+                    [disabled]="reviewingId === item.documentId || !reviewRemarks.trim()">Reject</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (hasPendingReviews) {
+      <label class="remarks-input">Reviewer remarks <span>Required to reject a document</span>
+        <textarea name="reviewRemarks" [(ngModel)]="reviewRemarks" maxlength="2000" rows="2"
+          placeholder="Add a reason before rejecting, or an optional note before verification"></textarea>
+      </label>
+    }
+  }
+</section>
