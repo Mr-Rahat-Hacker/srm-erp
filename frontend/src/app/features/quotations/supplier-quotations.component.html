@@ -1,0 +1,105 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SUPPLIER PORTAL / QUOTATIONS</span>
+    <h1>Invited RFQs</h1>
+    <p>Review your invitations, prepare a quotation and keep each submitted revision on record.</p>
+  </div>
+  <button class="secondary-button" type="button" (click)="loadRfqs()" [disabled]="loading">Refresh</button>
+</div>
+
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+
+<div class="workspace">
+  <section class="list-card">
+    <div class="card-heading"><div><h2>Your invitations</h2><p>Only RFQs invited to your supplier organization appear here.</p></div></div>
+    @if (loading) {
+      <div class="empty-state">Loading invitations…</div>
+    } @else if (rfqs.length === 0) {
+      <div class="empty-state"><strong>No published RFQs are available</strong><p>When a buyer invites your organization, the RFQ will appear here.</p></div>
+    } @else {
+      <div class="table-wrap"><table>
+        <thead><tr><th>RFQ</th><th>Deadline</th><th>Currency</th><th>Quotation</th><th></th></tr></thead>
+        <tbody>@for (rfq of rfqs; track rfq.rfqId) {
+          <tr>
+            <td><strong>{{ rfq.rfqNumber }}</strong><small>{{ rfq.title }}</small></td>
+            <td>{{ rfq.submissionDeadline | date:'medium' }}</td>
+            <td>{{ rfq.currencyCode }}</td>
+            <td><span class="status-pill">{{ rfq.quotationStatus || 'Not started' }}{{ rfq.latestVersion ? ' · v' + rfq.latestVersion : '' }}</span></td>
+            <td><button class="text-button" type="button" (click)="openRfq(rfq)">Open</button></td>
+          </tr>
+        }</tbody>
+      </table></div>
+    }
+  </section>
+
+  @if (selected; as rfq) {
+    <section class="detail-card">
+      <div class="card-heading">
+        <div><span class="eyebrow">{{ rfq.rfqNumber }} · {{ rfq.currencyCode }}</span><h2>{{ rfq.title }}</h2><p>{{ rfq.description || 'No additional description.' }}</p></div>
+        <button class="secondary-button" type="button" (click)="closeDetails()">Close</button>
+      </div>
+      @if (deadlinePassed) { <div class="notice error">The submission deadline has passed. This RFQ is read-only.</div> }
+      <div class="terms-grid">
+        <div><span>Deadline</span><strong>{{ rfq.submissionDeadline | date:'medium' }}</strong></div>
+        <div><span>Required delivery</span><strong>{{ rfq.requiredDeliveryDate || 'As quoted' }}</strong></div>
+        <div><span>Buyer payment terms</span><strong>{{ rfq.paymentTerms || 'Supplier to propose' }}</strong></div>
+        <div><span>Incoterms</span><strong>{{ rfq.incoterms || 'Supplier to propose' }}</strong></div>
+      </div>
+
+      <h3>Quotation version history</h3>
+      @if (rfq.quotationVersions.length === 0) {
+        <p class="helper-text">No draft or submitted quotation versions yet.</p>
+      } @else {
+        <div class="version-list">@for (version of rfq.quotationVersions; track version.quotationVersionId) {
+          <article class="version-card">
+            <div class="version-heading"><div><strong>Version {{ version.versionNumber }}</strong><span class="status-pill">{{ version.versionStatus }}</span></div>
+              <span>{{ version.submittedAt ? (version.submittedAt | date:'medium') : 'Not submitted' }}</span></div>
+            <p>Total landed cost: <strong>{{ version.totalLandedCost | number:'1.2-2' }} {{ version.currencyCode }}</strong></p>
+          </article>
+        }}</div>
+      }
+
+      <form #quoteForm="ngForm" (ngSubmit)="saveDraft()">
+        <h3>{{ latestVersion?.versionStatus === 'SUBMITTED' ? 'Prepare a new revision' : 'Quotation details' }}</h3>
+        <div class="form-grid">
+          <label>Validity date <input name="validityDate" type="date" [(ngModel)]="form.validityDate" [disabled]="deadlinePassed"></label>
+          <label>Delivery lead time (days) <input name="leadTimeDays" type="number" min="0" step="1" [(ngModel)]="form.leadTimeDays" [disabled]="deadlinePassed"></label>
+          <label>Minimum order quantity <input name="minimumOrderQuantity" type="number" min="0.0001" step="0.0001" [(ngModel)]="form.minimumOrderQuantity" [disabled]="deadlinePassed"></label>
+          <label>Incoterms <input name="incoterms" maxlength="20" [(ngModel)]="form.incoterms" [disabled]="deadlinePassed"></label>
+          <label class="wide">Payment terms <textarea name="paymentTerms" rows="2" maxlength="4000" [(ngModel)]="form.paymentTerms" [disabled]="deadlinePassed"></textarea></label>
+          <label>Warranty terms <textarea name="warrantyTerms" rows="2" maxlength="2000" [(ngModel)]="form.warrantyTerms" [disabled]="deadlinePassed"></textarea></label>
+          <label>Commercial remarks <textarea name="commercialRemarks" rows="2" maxlength="4000" [(ngModel)]="form.commercialRemarks" [disabled]="deadlinePassed"></textarea></label>
+          <label class="wide">Technical deviations <textarea name="technicalDeviations" rows="2" maxlength="4000" [(ngModel)]="form.technicalDeviations" [disabled]="deadlinePassed"></textarea></label>
+        </div>
+
+        <h3>Item pricing</h3>
+        @for (line of lines; track line.rfqLineId; let i = $index) {
+          <fieldset class="line-card">
+            <legend>Line {{ i + 1 }} · {{ lineDescription(line.rfqLineId) }}</legend>
+            <div class="line-grid">
+              <label>Basic unit price ({{ rfq.currencyCode }}) <input [name]="'basic-' + i" type="number" min="0.0001" step="0.0001" [(ngModel)]="line.basicUnitPrice" required [disabled]="deadlinePassed"></label>
+              <label>Discount per unit <input [name]="'discount-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.discountAmount" [disabled]="deadlinePassed"></label>
+              <label>Taxes <input [name]="'tax-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.taxAmount" [disabled]="deadlinePassed"></label>
+              <label>Freight <input [name]="'freight-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.freightAmount" [disabled]="deadlinePassed"></label>
+              <label>Packing <input [name]="'packing-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.packingAmount" [disabled]="deadlinePassed"></label>
+              <label>Tooling / development <input [name]="'tooling-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.toolingAmount" [disabled]="deadlinePassed"></label>
+              <label>Insurance <input [name]="'insurance-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.insuranceAmount" [disabled]="deadlinePassed"></label>
+              <label>Other charges <input [name]="'other-' + i" type="number" min="0" step="0.01" [(ngModel)]="line.otherCharges" [disabled]="deadlinePassed"></label>
+            </div>
+            <p class="line-reference">{{ rfq.lines[i].sapMaterialCode }} · Quantity {{ rfq.lines[i].quantity }} {{ rfq.lines[i].uomCode }}</p>
+          </fieldset>
+        }
+        <div class="form-actions">
+          <button class="secondary-button" type="submit" [disabled]="quoteForm.invalid || saving || deadlinePassed">
+            {{ saving ? 'Saving…' : 'Save draft' }}
+          </button>
+          <button class="primary-button" type="button" (click)="submitQuotation()" [disabled]="!canSubmit || submitting">
+            {{ submitting ? 'Submitting…' : 'Submit quotation version' }}
+          </button>
+        </div>
+      </form>
+      <p class="helper-text">Every submitted revision is retained as a separate version. Currency must match the RFQ. The buyer cannot see drafts.</p>
+    </section>
+  }
+</div>
