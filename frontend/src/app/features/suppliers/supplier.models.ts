@@ -27,6 +27,20 @@ export interface Supplier {
   createdAt: string;
 }
 
+export interface SupplierDocument {
+  documentId: string;
+  supplierId: string;
+  documentType: string;
+  originalFilename: string;
+  contentType: string;
+  versionNumber: number;
+  reviewStatus: 'PENDING' | 'VERIFIED' | 'REJECTED' | string;
+  expiryDate: string | null;
+  reviewRemarks: string | null;
+  uploadedAt: string;
+  reviewedAt: string | null;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
