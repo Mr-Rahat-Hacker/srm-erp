@@ -1,0 +1,166 @@
+@startuml
+title SRM Platform — UML Use Case Diagram (First Release)
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Supplier User" as Supplier
+actor "Supplier Verifier" as Verifier
+actor "Procurement Buyer" as Buyer
+actor "Procurement Approver" as Approver
+actor "SRM Admin" as Admin
+actor "Super Admin" as SuperAdmin
+actor "Auditor" as Auditor
+actor "Email Service" as Email
+actor "SAP System / Integration Layer" as SAP
+
+rectangle "SRM Platform" {
+  package "Identity & Access" {
+    usecase "Authenticate User" as UC_Auth
+    usecase "Manage Own Account" as UC_Account
+    usecase "Manage Internal Users
+and Delegated Roles" as UC_UserAdmin
+    usecase "Manage Platform Governance,
+Global Roles and Security" as UC_PlatformAdmin
+  }
+
+  package "Supplier Management" {
+    usecase "Register Supplier" as UC_Register
+    usecase "Manage Supplier Profile
+and Contacts" as UC_Profile
+    usecase "Upload / Replace
+Supplier Documents" as UC_Documents
+    usecase "Review Supplier Profile
+and Documents" as UC_Review
+    usecase "Request Corrections" as UC_Correction
+    usecase "Qualify / Reject Supplier" as UC_Qualify
+    usecase "Map Existing SAP
+Vendor Code" as UC_VendorMap
+  }
+
+  package "Sourcing & Quotation" {
+    usecase "Create and Manage RFQ" as UC_RFQ
+    usecase "Select and Invite
+Qualified Suppliers" as UC_Invite
+    usecase "View Invited RFQ" as UC_ViewRFQ
+    usecase "Submit Quotation" as UC_Submit
+    usecase "Revise / Withdraw
+Quotation (Versioned)" as UC_Revise
+    usecase "Compare Quotations" as UC_Compare
+    usecase "Record Commercial
+Evaluation" as UC_Evaluate
+    usecase "Conduct Negotiation" as UC_Negotiate
+    usecase "Respond to Negotiation
+and Submit Revision" as UC_NegResponse
+  }
+
+  package "Approval & Award" {
+    usecase "Recommend Supplier
+with Justification" as UC_Recommend
+    usecase "Review Assigned
+Approval Request" as UC_ReviewApproval
+    usecase "Approve / Reject /
+Return for Revision" as UC_Decide
+    usecase "Record Award" as UC_Award
+    usecase "Notify Selected and
+Unsuccessful Suppliers" as UC_AwardNotify
+  }
+
+  package "Platform Services" {
+    usecase "Receive In-App / Email
+Notifications" as UC_Notifications
+    usecase "View Role-Scoped
+Dashboard and Reports" as UC_Reports
+    usecase "Search and Review
+Audit Trail (Read-Only)" as UC_Audit
+    usecase "Create Controlled SAP PIR /
+Rate-Condition Update Request" as UC_PIR
+  }
+}
+
+Supplier --> UC_Auth
+Supplier --> UC_Account
+Supplier --> UC_Register
+Supplier --> UC_Profile
+Supplier --> UC_Documents
+Supplier --> UC_ViewRFQ
+Supplier --> UC_Submit
+Supplier --> UC_Revise
+Supplier --> UC_NegResponse
+Supplier --> UC_Notifications
+
+Verifier --> UC_Auth
+Verifier --> UC_Review
+Verifier --> UC_Correction
+Verifier --> UC_Qualify
+Verifier --> UC_Reports
+Verifier --> UC_Audit
+
+Buyer --> UC_Auth
+Buyer --> UC_RFQ
+Buyer --> UC_Invite
+Buyer --> UC_Compare
+Buyer --> UC_Evaluate
+Buyer --> UC_Negotiate
+Buyer --> UC_Recommend
+Buyer --> UC_Award
+Buyer --> UC_VendorMap
+Buyer --> UC_PIR
+Buyer --> UC_Reports
+Buyer --> UC_Notifications
+Buyer --> UC_Audit
+
+Approver --> UC_Auth
+Approver --> UC_ReviewApproval
+Approver --> UC_Decide
+Approver --> UC_Reports
+Approver --> UC_Notifications
+Approver --> UC_Audit
+
+Admin --> UC_Auth
+Admin --> UC_UserAdmin
+Admin --> UC_Reports
+Admin --> UC_Notifications
+Admin --> UC_Audit
+
+SuperAdmin --> UC_Auth
+SuperAdmin --> UC_PlatformAdmin
+SuperAdmin --> UC_Audit
+
+Auditor --> UC_Auth
+Auditor --> UC_Audit
+Auditor --> UC_Reports
+
+Email --> UC_Notifications
+SAP --> UC_VendorMap
+SAP --> UC_PIR
+
+UC_Review .> UC_Auth : <<include>>
+UC_Qualify .> UC_Review : <<include>>
+UC_Invite .> UC_RFQ : <<extend>>
+UC_Submit .> UC_ViewRFQ : <<extend>>
+UC_Revise .> UC_Submit : <<extend>>
+UC_Evaluate .> UC_Compare : <<include>>
+UC_NegResponse .> UC_Negotiate : <<extend>>
+UC_Decide .> UC_ReviewApproval : <<include>>
+UC_Award .> UC_Decide : <<include>>
+UC_AwardNotify .> UC_Award : <<include>>
+UC_PIR .> UC_Award : <<extend>>
+
+note bottom of UC_PlatformAdmin
+  Super Admin is for platform governance.
+  It does not silently edit quotations,
+  negotiations, approval decisions or awards.
+end note
+
+note bottom of UC_Audit
+  Audit access is read-only and role-scoped.
+  Audit events are append-only.
+end note
+
+note bottom of UC_PIR
+  SAP remains system of record for Vendor
+  and Material Master. PIR / rate-condition
+  writes use authorized SAP interfaces only.
+end note
+@enduml
