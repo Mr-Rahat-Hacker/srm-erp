@@ -74,8 +74,8 @@ public class EmailDeliveryScheduler {
                     WHERE queued.channel = 'EMAIL' AND queued.delivery_status = 'QUEUED'
                       AND u.email IS NOT NULL
                     ORDER BY queued.created_at
-                    FOR UPDATE OF queued SKIP LOCKED
                     LIMIT 20
+                    FOR UPDATE OF queued SKIP LOCKED
                 ) queued
                 WHERE n.notification_id = queued.notification_id
                 RETURNING n.notification_id, queued.email, queued.title, queued.body,
