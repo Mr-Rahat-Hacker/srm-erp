@@ -68,15 +68,19 @@ Open SRM: "
                 UPDATE srm.notification n
                 SET delivery_status = 'SENDING', retry_count = n.retry_count + 1
                 FROM (
-                    SELECT notification_id FROM srm.notification
-                    WHERE channel = 'EMAIL' AND delivery_status = 'QUEUED'
-                    ORDER BY created_at
-                    FOR UPDATE SKIP LOCKED
+                    SELECT queued.notification_id, u.email, queued.title, queued.body,
+                           queued.target_path
+                    FROM srm.notification queued
+                    JOIN srm.app_user u ON u.user_id = queued.recipient_user_id
+                    WHERE queued.channel = 'EMAIL' AND queued.delivery_status = 'QUEUED'
+                      AND u.email IS NOT NULL
+                    ORDER BY queued.created_at
+                    FOR UPDATE OF queued SKIP LOCKED
                     LIMIT 20
                 ) queued
-                JOIN srm.app_user u ON u.user_id = n.recipient_user_id
-                WHERE n.notification_id = queued.notification_id AND u.email IS NOT NULL
-                RETURNING n.notification_id, u.email, n.title, n.body, n.target_path, n.retry_count
+                WHERE n.notification_id = queued.notification_id
+                RETURNING n.notification_id, queued.email, queued.title, queued.body,
+                          queued.target_path, n.retry_count
                 """, (rs, row) -> map(rs));
     }
 
