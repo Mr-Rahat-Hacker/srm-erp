@@ -4,17 +4,11 @@ import { Observable } from 'rxjs';
 import { ApiResponse, Supplier, SupplierRegistration } from './supplier.models';
 
 /**
- * Codespaces maps each forwarded port to a different HTTPS origin. The 8080
- * forwarded URL can redirect unauthenticated/inactive port requests (302),
- * which browsers then report as a CORS failure. Use the Codespaces local
- * forwarded-port proxy route from the 4200 origin instead.
- *
- * In a Codespaces browser, /proxy/8080 is same-origin with Angular and avoids
- * cross-origin redirect/CORS handling. Local development falls back to 8080.
+ * Use a relative API path. During Codespaces development, Angular's dev-server
+ * proxy forwards /api to Spring Boot on localhost:8080. The browser therefore
+ * talks only to the frontend origin and does not make a cross-origin request.
  */
-const API_BASE_URL = window.location.hostname.endsWith('.app.github.dev')
-  ? '/proxy/8080/api/v1'
-  : 'http://localhost:8080/api/v1';
+const API_BASE_URL = '/api/v1';
 
 @Injectable({ providedIn: 'root' })
 export class SupplierService {
