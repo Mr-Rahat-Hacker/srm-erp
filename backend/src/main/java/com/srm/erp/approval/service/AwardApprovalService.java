@@ -111,6 +111,17 @@ public class AwardApprovalService {
                 VALUES (?, 'AWARD', 1, ?, 'PENDING')
                 RETURNING approval_task_id
                 """, UUID.class, approvalRequestId, request.approverUserId());
+        jdbc.update("""
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT ?, 'APPROVAL_TASK_ASSIGNED', channels.channel, 'QUEUED',
+                       'Award approval required for RFQ ' || r.rfq_number,
+                       'Review the buyer recommendation and record your decision in SRM.',
+                       '/approvals'
+                FROM srm.rfq r
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                WHERE r.rfq_id = ?
+                """, request.approverUserId(), rfqId);
         audit(buyerId, "AWARD_APPROVAL_REQUESTED", "APPROVAL_REQUEST", approvalRequestId,
                 rfqId, "SUCCESS", recommendation.id().toString());
         return new ApprovalTaskRecord(approvalRequestId, taskId, rfqId, null, null,
@@ -187,6 +198,17 @@ public class AwardApprovalService {
                 """, taskId, approverId, decision, blankToNull(request.comments()));
         jdbc.update("UPDATE srm.approval_request SET status = ? WHERE approval_request_id = ?",
                 status, task.approvalRequestId());
+        jdbc.update("""
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT ?, ?, channels.channel, 'QUEUED',
+                       'Award approval update for RFQ ' || r.rfq_number,
+                       ?, '/evaluations'
+                FROM srm.rfq r
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                WHERE r.rfq_id = ?
+                """, task.requestedBy(), "AWARD_APPROVAL_" + status, task.supplierName() + " recommendation was "
+                + status.toLowerCase().replace('_', ' ') + ". " + request.comments(), task.rfqId());
         audit(approverId, "AWARD_" + decision, "APPROVAL_REQUEST", task.approvalRequestId(),
                 task.rfqId(), "SUCCESS", blankToNull(request.comments()));
         return new ApprovalTaskRecord(task.approvalRequestId(), task.approvalTaskId(), task.rfqId(),
