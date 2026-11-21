@@ -4,10 +4,11 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SupplierService } from './supplier.service';
 import { Supplier, SupplierRegistration } from './supplier.models';
+import { SupplierDocumentsComponent } from './supplier-documents.component';
 
 @Component({
   selector: 'app-suppliers',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, SupplierDocumentsComponent],
   templateUrl: './suppliers.component.html',
   styleUrl: './suppliers.component.scss',
 })
