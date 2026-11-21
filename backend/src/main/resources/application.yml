@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: srm-erp-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/srm_erp}
+    username: ${DB_USERNAME:srm_user}
+    password: ${DB_PASSWORD:srm_local_password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
