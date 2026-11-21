@@ -1,0 +1,155 @@
+@startuml
+title SRM — Supplier Onboarding and Qualification Activity Diagram
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor white
+  BorderColor #334155
+  DiamondBackgroundColor #f8fafc
+  DiamondBorderColor #334155
+}
+|Supplier User|
+start
+:Open supplier registration portal;
+:Create account;
+:Verify email / mobile using configured verification;
+:Start supplier registration;
+:Enter company, address, tax,
+category, capability and contact details;
+:Upload required documents;
+:Save as Draft;
+:Complete mandatory-field validation;
+if (All required fields and documents complete?) then (Yes)
+  :Submit supplier application;
+else (No)
+  :Show validation errors;
+  :Save draft and return later;
+  stop
+endif
+
+|SRM Platform|
+:Set status = Submitted;
+:Create supplier review case;
+:Notify assigned internal reviewers;
+
+|SCM Reviewer|
+:Review company profile,
+category and sourcing suitability;
+if (SCM review acceptable?) then (Yes)
+  :Record SCM recommendation;
+else (Correction / Hold / Reject)
+  :Record reason and action;
+endif
+
+|SRM Platform|
+if (SCM requests correction?) then (Yes)
+  :Set status = Correction Required;
+  :Notify supplier with permitted fields
+and reviewer remarks;
+  |Supplier User|
+  :Edit permitted sections;
+  :Upload corrected documents;
+  :Resubmit application;
+  |SRM Platform|
+  :Create new review revision;
+  :Route to required review stages;
+  |SCM Reviewer|
+  :Re-review corrected SCM information;
+else (No)
+endif
+
+if (SCM rejects?) then (Yes)
+  :Record rejection and close / route
+for authorized reopening policy;
+  :Notify supplier;
+  stop
+else (No)
+endif
+
+|Finance Reviewer|
+:Review GST, PAN, bank and
+financial information;
+if (Finance requests correction?) then (Yes)
+  |SRM Platform|
+  :Send correction request;
+  |Supplier User|
+  :Correct permitted finance fields
+and resubmit;
+  |Finance Reviewer|
+  :Re-review finance information;
+else (No)
+endif
+if (Finance rejects?) then (Yes)
+  |SRM Platform|
+  :Record rejection with reason;
+  :Notify supplier;
+  stop
+else (No)
+endif
+
+|Quality Reviewer|
+:Review certifications, capability,
+quality systems and audit documents;
+if (Quality requests correction?) then (Yes)
+  |SRM Platform|
+  :Send correction request;
+  |Supplier User|
+  :Correct permitted quality fields
+and resubmit;
+  |Quality Reviewer|
+  :Re-review quality information;
+else (No)
+endif
+if (Quality rejects?) then (Yes)
+  |SRM Platform|
+  :Record rejection with reason;
+  :Notify supplier;
+  stop
+else (No)
+endif
+
+|Final Supplier Approver|
+:Review SCM, Finance and Quality outcomes;
+if (Final decision?) then (Approve)
+  :Approve supplier application;
+elseif (Send Back)
+  :Send back with mandatory remarks;
+  |SRM Platform|
+  :Set status = Correction Required;
+  :Notify supplier;
+  |Supplier User|
+  :Correct permitted fields and resubmit;
+  |SRM Platform|
+  :Route revised application to affected reviewers;
+  stop
+elseif (Hold)
+  :Put application on hold with reason;
+  |SRM Platform|
+  :Record hold and notify responsible users;
+  stop
+else (Reject)
+  :Reject with mandatory reason;
+  |SRM Platform|
+  :Record rejection and notify supplier;
+  stop
+endif
+
+|SRM Platform|
+:Set status = Approved / Qualified;
+:Generate internal SRM Supplier Number;
+:Record all decisions and status transitions
+in append-only audit trail;
+if (SAP Vendor Code required by company policy?) then (Yes)
+  :Wait for authorized SAP vendor creation
+outside SRM;
+  :Map existing SAP Vendor Code;
+else (No)
+  :Keep SAP Vendor mapping pending / optional;
+endif
+if (Activation authorized?) then (Yes)
+  :Set SRM supplier status = Active;
+else (No)
+  :Keep supplier Approved but not Active;
+endif
+:Notify supplier and authorized internal users;
+stop
+@enduml
