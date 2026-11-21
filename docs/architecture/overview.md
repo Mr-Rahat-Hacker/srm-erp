@@ -1,61 +1,87 @@
-# SRM ERP — Architecture Overview
+# SRM Platform — Architecture Overview
 
 ## 1. Architecture style
 
-Use a modular monolith for the MVP. This keeps deployment and development straightforward while maintaining clear module boundaries for future extraction if scale requires it.
+Use a modular monolith for the first SRM release. Maintain clear module boundaries so future procurement capabilities can be added without rewriting the SRM core.
 
 ## 2. High-level components
 
 ```text
-Angular Web Client
-       |
-       | HTTPS / REST JSON
-       v
-Spring Boot Application
-  |       |        |
-  |       |        +-- Integration Adapters (SAP / external systems)
-  |       +----------- Business Modules
-  |                    Supplier, Material, Sourcing,
-  |                    Purchasing, Inventory, Invoice
-  |
-  +---------------- PostgreSQL
+Supplier Portal                 Buyer / Approver Portal
+      |                                  |
+      +------------ Angular ------------+
+                       |
+                 HTTPS / REST
+                       |
+               Spring Boot API
+                       |
+     +-----------------+----------------------+
+     |          |           |          |       |
+  Supplier   Sourcing   Quotation  Workflow  Notification
+  Management / RFQ      & Bidding  & Approval & Audit
+     |          |           |          |       |
+     +---------------- PostgreSQL ------------+
+                       |
+               SAP Integration Adapter
+                       |
+             Authorized SAP APIs / Layer
 ```
 
-## 3. Backend module boundaries
+## 3. First-release backend modules
 
-- identity: users, roles and permissions.
-- supplier: supplier master and contacts.
-- material: material master and units.
-- purchasing-master: Purchase Info Records and Schedule Agreements.
-- sourcing: RFQs, supplier invitations and quotations.
-- procurement: PR, approvals and PO.
-- inventory: GRN and receipt transactions.
-- invoice: invoice references and matching status.
-- integration: SAP adapters, mappings and synchronization logs.
-- audit: business change history.
+- identity-access: users, roles, permissions and authenticated sessions.
+- supplier: supplier self-registration, profile and contacts.
+- supplier-documents: document upload, metadata, verification and revision history.
+- supplier-qualification: verification, correction requests, approval, rejection and qualification status.
+- sourcing-rfq: RFQ header, RFQ line references, invited suppliers and deadlines.
+- quotation: supplier bid submission, validation and immutable quotation versions.
+- evaluation: commercial comparison, evaluation criteria and buyer recommendation.
+- negotiation: negotiation rounds, messages, deadlines and revised quotation versions.
+- approval: configurable approval routes and recorded decisions.
+- award: final award decision and supplier notifications.
+- notification: email / in-app messages, delivery logs and retry handling.
+- audit: traceable business activity and status history.
+- integration-sap: future authorized SAP mapping and PIR / purchasing condition integration.
 
-## 4. Data ownership
+## 4. SAP boundary
 
-PostgreSQL is the primary database for SRM-owned records. SAP remains an external system of record for any data explicitly governed by the customer's SAP configuration. Ownership and synchronization direction must be defined per entity before enabling integration.
+SAP remains the system of record for SAP Vendor Master / Business Partner and Material Master and remains the execution platform for complex manufacturing procurement.
 
-## 5. API conventions
+SRM stores its internal Supplier ID and maps an existing SAP Vendor Code. RFQ items refer to SAP Material Codes; SRM does not create Material Master.
+
+The final initial-SRM integration milestone is controlled SAP PIR and relevant purchasing rate/condition creation or update through authorized APIs / integration. Do not write directly to the SAP database.
+
+PR, PO, GRN, invoice verification, MRP and Schedule Agreement execution are outside the initial SRM release.
+
+## 5. Data ownership
+
+PostgreSQL stores SRM-owned workflow data, supplier-submitted documents and quotations, negotiation versions, approval decisions, audit events and notifications. SAP-owned master data remains in SAP; store references and mappings only as required.
+
+## 6. API conventions
 
 - Version APIs under `/api/v1`.
-- Use JSON request and response bodies.
-- Validate input on the server.
-- Return consistent error responses.
-- Use pagination for collection endpoints.
-- Protect state-changing operations with authorization and audit logging.
+- Use JSON request / response bodies.
+- Validate all supplier and buyer input server-side.
+- Use pagination and filtering for collections.
+- Enforce authorization on every protected operation.
+- Preserve quotation and approval history; avoid destructive overwrites.
+- Use consistent error response format.
 
-## 6. Security baseline
+## 7. Security baseline
 
-- HTTPS in deployed environments.
-- Password hashing using a modern adaptive algorithm.
-- Role-based authorization.
-- Server-side validation.
-- Secrets stored in environment variables or a secret manager, never committed.
-- Audit sensitive changes and integration events.
+- Spring Security and JWT authentication.
+- Role-based access control for supplier, buyer, approver, administrator and auditor.
+- Suppliers can access only their own profile, invited RFQs and submitted quotations.
+- Buyers can access RFQs and supplier submissions within their authorization.
+- Approvers can act only on assigned approval tasks.
+- Protect uploaded documents and restrict access by role.
+- Keep secrets outside source control.
+- Audit sensitive actions and SAP integration events.
 
-## 7. Deployment approach
+## 8. Notifications and audit
 
-Develop in GitHub Codespaces. Keep the frontend, backend and database configuration reproducible. Container-based development will be introduced with the runnable scaffold.
+Use SMTP / JavaMailSender and in-app notifications with delivery logs and retry handling. Notification links must not bypass authentication or directly approve transactions. Approval decisions are made inside the authenticated application.
+
+## 9. Deployment
+
+Develop in GitHub Codespaces. Keep Angular, Spring Boot and PostgreSQL configuration reproducible. Use environment-based configuration and containerized local development.
