@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +47,8 @@ class SupplierLifecycleServiceTest {
     void submitMovesDraftToSubmittedAndAuditsTheAuthorizedAdminActor() {
         givenStatus("DRAFT");
         doAnswer(invocation -> {
-            updateArguments.add(invocation.getArgument(1));
+            Object[] arguments = invocation.getArguments();
+            updateArguments.add(Arrays.copyOfRange(arguments, 1, arguments.length));
             return 1;
         }).when(jdbc).update(anyString(), any(Object[].class));
 
