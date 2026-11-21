@@ -65,6 +65,8 @@ export class EvaluationsComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
+    this.approvalRequests = [];
+    this.finalAward = null;
     this.comparisons.compare(this.selectedRfqId).subscribe({
       next: (response) => {
         this.comparison = response.data;
@@ -146,6 +148,10 @@ export class EvaluationsComponent implements OnInit {
 
   protected requestsFor(recommendationId: string): ApprovalTask[] {
     return this.approvalRequests.filter((request) => request.recommendationId === recommendationId);
+  }
+
+  protected hasPendingApproval(recommendationId: string): boolean {
+    return this.requestsFor(recommendationId).some((request) => request.status === 'PENDING');
   }
 
   protected requestAwardApproval(recommendationId: string): void {
