@@ -54,6 +54,12 @@ public class AwardApprovalController {
                 approvals.decide(taskId, actorId(), request));
     }
 
+    @GetMapping("/rfqs/{rfqId}/award")
+    @PreAuthorize("hasRole('PROCUREMENT_BUYER')")
+    public ApiResponse<AwardResponse> awardForRfq(@PathVariable UUID rfqId) {
+        return ApiResponse.success("RFQ award retrieved", approvals.awardForRfq(rfqId, actorId()));
+    }
+
     @PostMapping("/rfqs/{rfqId}/award")
     @PreAuthorize("hasRole('PROCUREMENT_BUYER')")
     public ApiResponse<AwardResponse> award(
