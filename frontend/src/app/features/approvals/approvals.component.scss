@@ -1,0 +1,33 @@
+:host { display:block; color:#1d2d42; }
+.page-heading { margin-bottom:22px; }
+.eyebrow { color:#8795a5; font-size:9px; font-weight:800; letter-spacing:.14em; }
+h1 { margin:8px 0 5px; color:#17263b; font-size:clamp(27px,3vw,36px); letter-spacing:-.04em; }
+.page-heading p,.task-card header p { margin:0; color:#78889b; font-size:12px; }
+.notice { margin-bottom:12px; padding:10px 13px; border-radius:7px; font-size:11px; }
+.notice.error { background:#fff1f0; color:#a13d36; }
+.notice.success { background:#edf8f1; color:#267447; }
+.task-list { display:grid; gap:14px; }
+.task-card { display:grid; gap:14px; padding:18px; border:1px solid #e6ebf1; border-radius:10px; background:#fff; }
+.task-card header { display:flex; justify-content:space-between; gap:12px; }
+.task-card h2 { margin:6px 0 4px; color:#273b51; font-size:17px; }
+.status { align-self:flex-start; padding:5px 9px; border-radius:20px; background:#f1f4f7; color:#66788c; font-size:9px; font-weight:800; }
+.status.pending { background:#fff4dd; color:#8b6016; }
+dl { display:flex; flex-wrap:wrap; gap:16px 32px; margin:0; }
+dl div { display:grid; gap:4px; }
+dt { color:#8795a5; font-size:9px; font-weight:700; }
+dd { margin:0; color:#3c5168; font-size:11px; }
+.justification { padding:12px; border-radius:7px; background:#f7f9fb; }
+.justification h3 { margin:0 0 6px; color:#53657a; font-size:10px; text-transform:uppercase; letter-spacing:.06em; }
+.justification p { margin:0; color:#30465e; font-size:12px; line-height:1.55; white-space:pre-wrap; }
+.comment-field { display:grid; gap:6px; color:#53657a; font-size:10px; font-weight:750; }
+.comment-field span { color:#b54b46; }
+textarea { box-sizing:border-box; width:100%; padding:9px; border:1px solid #dfe6ed; border-radius:6px; color:#30465e; font:inherit; font-size:11px; resize:vertical; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; }
+.actions button { min-height:35px; padding:0 12px; border:1px solid transparent; border-radius:6px; color:#fff; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
+.actions button:disabled { opacity:.55; cursor:not-allowed; }
+.approve { background:#287249; }
+.return { background:#a16e1b; }
+.reject { background:#a3453d; }
+.resolved { margin:0; color:#78889b; font-size:10px; }
+.empty-state { padding:32px; border:1px solid #e6ebf1; border-radius:10px; background:#fff; color:#52657a; text-align:center; font-size:12px; }
+.empty-state p { margin-bottom:0; color:#78889b; }
