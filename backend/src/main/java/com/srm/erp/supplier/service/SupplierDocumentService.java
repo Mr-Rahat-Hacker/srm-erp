@@ -143,7 +143,7 @@ public class SupplierDocumentService {
 
     private String safeFilename(String filename) {
         if (filename == null || filename.isBlank()) return "supplier-document";
-        String clean = filename.replaceAll("[\\\\/\\r\\n\\\\p{Cntrl}]", "_");
+        String clean = filename.replaceAll("[^A-Za-z0-9._ -]", "_");
         return clean.length() > 255 ? clean.substring(clean.length() - 255) : clean;
     }
 
