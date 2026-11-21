@@ -60,3 +60,14 @@ label span { color:#b54b46; }
 .approval-request select { min-height:35px; padding:7px 9px; border:1px solid #dfe6ed; border-radius:6px; color:#30465e; font:inherit; font-size:10px; }
 .approval-request-status { align-items:center; justify-content:space-between; color:#52657a; font-size:10px; }
 .final-award { border-color:#b9dec7; background:#f4fbf6; }
+
+.sap-pir-panel { margin-top:14px; padding-top:12px; border-top:1px solid #dcebe1; }
+.sap-pir-panel h3 { margin:0 0 5px; color:#30465e; font-size:11px; }
+.sap-pir-panel > p { margin:0 0 10px; color:#78889b; font-size:9px; line-height:1.5; }
+.sap-request-form,.sap-request-status { display:flex; align-items:flex-end; flex-wrap:wrap; gap:9px; padding:9px; border:1px solid #e6ebf1; border-radius:7px; background:#fff; }
+.sap-request-form label { display:grid; flex:1; min-width:200px; gap:5px; color:#53657a; font-size:9px; font-weight:750; }
+.sap-request-form input { min-height:34px; padding:7px; border:1px solid #dfe6ed; border-radius:5px; color:#30465e; font:inherit; font-size:10px; }
+.sap-request-status { align-items:center; justify-content:space-between; margin-top:7px; color:#52657a; font-size:10px; }
+.sap-request-status strong,.sap-request-status small { display:block; }
+.sap-request-status small { margin-top:3px; color:#8795a5; font-size:9px; overflow-wrap:anywhere; }
+.sap-request-status .error-text { color:#a13d36; }
