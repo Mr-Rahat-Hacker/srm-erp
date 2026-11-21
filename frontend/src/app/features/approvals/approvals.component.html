@@ -1,0 +1,61 @@
+<section class="page-heading">
+  <span class="eyebrow">AWARD WORKFLOW</span>
+  <h1>Approval inbox</h1>
+  <p>Review the buyer recommendation and make a traceable decision for each assigned RFQ.</p>
+</section>
+
+@if (error) { <div class="notice error" role="alert">{{ error }}</div> }
+@if (notice) { <div class="notice success" role="status">{{ notice }}</div> }
+
+@if (loading) {
+  <section class="empty-state">Loading assigned tasks…</section>
+} @else if (!tasks.length) {
+  <section class="empty-state">
+    <strong>No approval tasks assigned</strong>
+    <p>New award approval requests assigned to you will appear here.</p>
+  </section>
+} @else {
+  <div class="task-list">
+    @for (task of tasks; track task.approvalTaskId) {
+      <article class="task-card">
+        <header>
+          <div>
+            <span class="eyebrow">{{ task.rfqNumber }} · {{ task.supplierNumber }}</span>
+            <h2>{{ task.rfqTitle }}</h2>
+            <p>{{ task.supplierName }} · quotation version {{ task.versionNumber }}</p>
+          </div>
+          <span class="status" [class.pending]="task.status === 'PENDING'">{{ task.status }}</span>
+        </header>
+
+        <dl>
+          <div><dt>Requested by</dt><dd>{{ task.requesterName }}</dd></div>
+          <div><dt>Received</dt><dd>{{ task.createdAt | date:'medium' }}</dd></div>
+          @if (task.dueAt) { <div><dt>Due</dt><dd>{{ task.dueAt | date:'medium' }}</dd></div> }
+        </dl>
+
+        <section class="justification">
+          <h3>Buyer justification</h3>
+          <p>{{ task.justification }}</p>
+        </section>
+
+        @if (task.status === 'PENDING') {
+          <label class="comment-field">
+            Decision comments <span aria-hidden="true">*</span>
+            <textarea [(ngModel)]="comments[task.approvalTaskId]" rows="3"
+              placeholder="Record the reason for your decision"></textarea>
+          </label>
+          <div class="actions">
+            <button type="button" class="approve" [disabled]="savingTask === task.approvalTaskId"
+              (click)="decide(task, 'APPROVE')">Approve</button>
+            <button type="button" class="return" [disabled]="savingTask === task.approvalTaskId"
+              (click)="decide(task, 'RETURN_FOR_REVISION')">Return for revision</button>
+            <button type="button" class="reject" [disabled]="savingTask === task.approvalTaskId"
+              (click)="decide(task, 'REJECT')">Reject</button>
+          </div>
+        } @else {
+          <p class="resolved">This request has already been decided.</p>
+        }
+      </article>
+    }
+  </div>
+}

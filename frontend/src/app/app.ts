@@ -21,16 +21,19 @@ export class App {
         { label: 'Negotiation requests', path: '/supplier-portal/negotiations', icon: '↔' },
       ];
     }
-    return [
+    const items = [
       { label: 'Overview', path: '/dashboard', icon: '⌂' },
       { label: 'Suppliers', path: '/suppliers', icon: '▤' },
       { label: 'RFQ Management', path: '/rfqs', icon: '◎' },
       { label: 'Quotations', path: '/quotations', icon: '▧' },
       { label: 'Evaluations', path: '/evaluations', icon: '◇' },
       { label: 'Negotiations', path: '/negotiations', icon: '↔' },
-      { label: 'Approvals', path: '/approvals', icon: '✓' },
-      { label: 'Reports', path: '/reports', icon: '▥' },
     ];
+    if (roles.includes('PROCUREMENT_APPROVER')) {
+      items.push({ label: 'Approvals', path: '/approvals', icon: '✓' });
+    }
+    items.push({ label: 'Reports', path: '/reports', icon: '▥' });
+    return items;
   }
 
   protected get currentUser() {
