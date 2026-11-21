@@ -31,6 +31,7 @@ public class NegotiationService {
             throw new ResponseStatusException(BAD_REQUEST, "Select each participating supplier once");
         }
         requireBuyerOwnsRfq(rfqId, buyerId);
+        lockBuyerRfq(rfqId, buyerId);
         for (UUID supplierId : request.supplierIds()) {
             List<Participant> participants = jdbc.query("""
                     SELECT s.supplier_id,
@@ -82,7 +83,7 @@ public class NegotiationService {
 
     public List<NegotiationRoundResponse> listForBuyer(UUID rfqId, UUID buyerId) {
         requireBuyerOwnsRfq(rfqId, buyerId);
-        return listRounds("r.rfq_id = ? AND r.buyer_user_id = ?", rfqId, buyerId);
+        return listRounds("r.rfq_id = ? AND f.buyer_user_id = ?", rfqId, buyerId);
     }
 
     public List<NegotiationRoundResponse> listForSupplier(UUID userId) {
@@ -102,7 +103,7 @@ public class NegotiationService {
 
     @Transactional
     public NegotiationRoundResponse reply(UUID roundId, UUID userId, NegotiationMessageRequest request) {
-        NegotiationRoundResponse round = findRoundForSupplier(roundId, userId);
+        SupplierRoundLock round = lockSupplierRound(roundId, userId);
         if (!"OPEN".equals(round.status())) {
             throw new ResponseStatusException(CONFLICT, "This negotiation round is closed");
         }
@@ -216,12 +217,15 @@ public class NegotiationService {
         UUID roundId = rs.getObject("negotiation_round_id", UUID.class);
         List<NegotiationMessageResponse> messages = jdbc.query("""
                 SELECT m.message_id, m.sender_user_id, u.full_name,
-                       CASE WHEN mr.role_code = 'SUPPLIER_USER' THEN 'SUPPLIER' ELSE 'BUYER' END AS sender_role,
+                       CASE WHEN EXISTS (
+                           SELECT 1 FROM srm.user_role ur
+                           JOIN srm.role role_check ON role_check.role_id = ur.role_id
+                           WHERE ur.user_id = m.sender_user_id AND role_check.role_code = 'SUPPLIER_USER'
+                       ) THEN 'SUPPLIER' ELSE 'BUYER' END AS sender_role,
                        m.message_type, m.message_text, m.quotation_version_id, v.version_number, m.created_at
                 FROM srm.negotiation_message m
                 JOIN srm.app_user u ON u.user_id = m.sender_user_id
-                LEFT JOIN srm.user_role ur ON ur.user_id = u.user_id
-                LEFT JOIN srm.role mr ON mr.role_id = ur.role_id
+
                 LEFT JOIN srm.quotation_version v ON v.quotation_version_id = m.quotation_version_id
                 WHERE m.negotiation_round_id = ?
                 ORDER BY m.created_at, m.message_id
@@ -240,6 +244,34 @@ public class NegotiationService {
                 rs.getTimestamp("closed_at") == null ? null : rs.getTimestamp("closed_at").toInstant(),
                 rs.getString("outcome"), rs.getString("outcome_remarks"),
                 (Integer) rs.getObject("baseline_version_number"), messages);
+    }
+
+    private void lockBuyerRfq(UUID rfqId, UUID buyerId) {
+        jdbc.queryForObject("""
+                SELECT rfq_id FROM srm.rfq WHERE rfq_id = ? AND buyer_user_id = ? FOR UPDATE
+                """, UUID.class, rfqId, buyerId);
+    }
+
+    private SupplierRoundLock lockSupplierRound(UUID roundId, UUID userId) {
+        List<SupplierRoundLock> rounds = jdbc.query("""
+                SELECT r.status, r.response_deadline, r.rfq_id, r.supplier_id, r.opened_at,
+                       base.version_number AS baseline_version_number
+                FROM srm.negotiation_round r
+                JOIN srm.supplier_organization s ON s.supplier_id = r.supplier_id
+                JOIN srm.supplier_user_membership m ON m.supplier_id = s.supplier_id
+                LEFT JOIN srm.quotation_version base
+                  ON base.quotation_version_id = r.baseline_quotation_version_id
+                WHERE r.negotiation_round_id = ? AND m.user_id = ? AND m.membership_status = 'ACTIVE'
+                  AND s.lifecycle_status IN ('APPROVED', 'ACTIVE')
+                FOR UPDATE OF r
+                """, (rs, row) -> new SupplierRoundLock(
+                rs.getString("status"),
+                rs.getTimestamp("response_deadline") == null ? null : rs.getTimestamp("response_deadline").toInstant(),
+                rs.getObject("rfq_id", UUID.class), rs.getObject("supplier_id", UUID.class),
+                rs.getTimestamp("opened_at").toInstant(), (Integer) rs.getObject("baseline_version_number")
+        ), roundId, userId);
+        if (rounds.isEmpty()) throw new ResponseStatusException(NOT_FOUND, "Negotiation round not found");
+        return rounds.getFirst();
     }
 
     private void requireBuyerOwnsRfq(UUID rfqId, UUID buyerId) {
@@ -274,4 +306,6 @@ public class NegotiationService {
 
     private record Participant(UUID supplierId, UUID baselineVersionId) {}
     private record RoundHeader(UUID roundId, UUID supplierId, String status) {}
+    private record SupplierRoundLock(String status, Instant responseDeadline, UUID rfqId, UUID supplierId,
+                                     Instant openedAt, Integer baselineQuotationVersion) {}
 }
