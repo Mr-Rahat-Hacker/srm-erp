@@ -1,15 +1,14 @@
 package com.srm.erp.supplier.service;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class SupplierLifecycleService {
@@ -25,7 +24,7 @@ public class SupplierLifecycleService {
         if (!"DRAFT".equals(current) && !"CORRECTION_REQUIRED".equals(current)) {
             throw new ResponseStatusException(CONFLICT, "Only draft or correction-required suppliers can be submitted");
         }
-        return transition(supplierId, actorId, current, "SUBMITTED", "SUPPLIER_SUBMITTED", null, "SUPPLIER_USER");
+        return transition(supplierId, actorId, current, "SUBMITTED", "SUPPLIER_SUBMITTED", null, "SRM_ADMIN");
     }
 
     @Transactional
@@ -87,7 +86,7 @@ public class SupplierLifecycleService {
                 INSERT INTO srm.audit_event
                     (actor_user_id, actor_type, action_code, entity_type, entity_id, supplier_id,
                      outcome, reason, changed_fields)
-                VALUES (?, ?, ?, 'SUPPLIER', ?, ?, 'SUCCESS', ?,
+                VALUES (?, ?, ?, 'SUPPLIER', ?, ?, 'SUCCESS', ?, 
                         jsonb_build_object('lifecycle_status', jsonb_build_object('old', ?, 'new', ?)))
                 """, actorId, actorType, action, supplierId, supplierId, reason, oldStatus, newStatus);
         return new LifecycleResult(supplierId, oldStatus, newStatus, action);
