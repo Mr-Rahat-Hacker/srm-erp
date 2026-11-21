@@ -1,0 +1,50 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">OVERVIEW</span>
+    <h1>Workspace overview</h1>
+    <p>Build and manage supplier relationships through one controlled workflow.</p>
+  </div>
+  <span class="release-chip">FIRST RELEASE · SRM</span>
+</div>
+
+<section class="welcome-panel">
+  <div class="welcome-copy">
+    <span class="panel-kicker">SUPPLIER RELATIONSHIP MANAGEMENT</span>
+    <h2>Your SRM workspace is taking shape.</h2>
+    <p>The application foundation is in place. Supplier onboarding is the first business module scheduled for implementation.</p>
+    <a routerLink="/suppliers" class="primary-link">Open supplier management <span aria-hidden="true">→</span></a>
+  </div>
+  <div class="welcome-symbol" aria-hidden="true">SRM</div>
+</section>
+
+<section class="section-block">
+  <div class="section-heading">
+    <div>
+      <h2>Development milestones</h2>
+      <p>Implementation progress for the first SRM release</p>
+    </div>
+    <span class="milestone-count">1 of 4 foundation milestones</span>
+  </div>
+
+  <div class="milestone-list">
+    @for (milestone of milestones; track milestone.name) {
+      <article class="milestone-row">
+        <span class="milestone-check" [class.complete]="milestone.complete">
+          {{ milestone.complete ? '✓' : '○' }}
+        </span>
+        <div>
+          <strong>{{ milestone.name }}</strong>
+          <p>{{ milestone.detail }}</p>
+        </div>
+        <span class="milestone-status" [class.complete-text]="milestone.complete">
+          {{ milestone.complete ? 'Foundation ready' : 'Upcoming' }}
+        </span>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="boundary-note">
+  <strong>Designed to complement SAP</strong>
+  <p>SRM owns supplier collaboration and sourcing workflows. SAP remains the system of record for Vendor Master, Material Master and manufacturing procurement execution.</p>
+</section>
