@@ -28,3 +28,9 @@ management:
   endpoint:
     health:
       show-details: never
+
+srm:
+  security:
+    jwt:
+      secret: ${SRM_JWT_SECRET:local-development-secret-change-this-before-deployment-2026}
+      expiration-seconds: ${SRM_JWT_EXPIRATION_SECONDS:3600}
