@@ -1,0 +1,9 @@
+:host { display: block; }
+.placeholder-page { max-width: 760px; padding-top: 12px; }
+.eyebrow { color: #64748b; font-size: 11px; font-weight: 750; letter-spacing: .13em; }
+h1 { margin: 10px 0; color: #142238; font-size: 32px; letter-spacing: -.04em; }
+.description { max-width: 650px; color: #718096; font-size: 14px; line-height: 1.7; }
+.status-panel { display: flex; gap: 15px; margin-top: 30px; padding: 20px; border: 1px solid #e1e9f0; border-radius: 12px; background: #fff; }
+.status-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 9px; background: #edf4fa; color: #315b7e; font-size: 18px; }
+.status-panel strong { color: #26374b; font-size: 13px; }
+.status-panel p { margin: 6px 0 0; color: #7a8999; font-size: 12px; line-height: 1.6; }
