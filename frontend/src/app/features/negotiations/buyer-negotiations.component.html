@@ -1,0 +1,89 @@
+<div class="page-heading">
+  <div><span class="eyebrow">BUYER WORKSPACE / NEGOTIATIONS</span><h1>Negotiation rounds</h1>
+    <p>Send requests to participating suppliers, preserve the message history and record each round outcome.</p></div>
+</div>
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
+
+<section class="selector-card">
+  <label>RFQ
+    <select name="rfqId" [(ngModel)]="selectedRfqId">
+      <option value="">Select an RFQ</option>
+      @for (rfq of rfqs; track rfq.rfqId) { <option [value]="rfq.rfqId">{{ rfq.rfqNumber }} · {{ rfq.title }}</option> }
+    </select>
+  </label>
+  <button class="primary-button" type="button" (click)="loadRfq()" [disabled]="!selectedRfqId || loading">
+    {{ loading ? 'Loading…' : 'Open negotiation workspace' }}
+  </button>
+</section>
+
+@if (comparison; as data) {
+  <section class="request-card">
+    <div class="card-heading"><div><span class="eyebrow">{{ data.rfqNumber }}</span><h2>{{ data.title }}</h2></div>
+      <span class="currency">{{ data.currencyCode }}</span></div>
+    @if (participatingSuppliers.length === 0) {
+      <p class="empty-state">Negotiation can start after at least one invited supplier submits a quotation.</p>
+    } @else {
+      <form #requestForm="ngForm" (ngSubmit)="initiate()">
+        <div class="form-grid">
+          <label class="wide">Participating suppliers
+            <select name="supplierIds" multiple size="4" [(ngModel)]="selectedSupplierIds">
+              @for (supplier of participatingSuppliers; track supplier.supplierId) {
+                <option [value]="supplier.supplierId" [disabled]="hasOpenRound(supplier.supplierId)">
+                  {{ supplier.supplierNumber }} · {{ supplier.legalName }} · v{{ supplier.submittedVersion }}
+                  {{ hasOpenRound(supplier.supplierId) ? '(round open)' : '' }}
+                </option>
+              }
+            </select>
+          </label>
+          <label>Supplier response deadline <input name="responseDeadline" type="datetime-local" [(ngModel)]="responseDeadline" required></label>
+          <label class="wide">Negotiation request <textarea name="initialRequest" [(ngModel)]="initialRequest" rows="3" required maxlength="4000"
+            placeholder="Describe the commercial clarification or revision requested"></textarea></label>
+        </div>
+        <div class="form-actions"><button class="primary-button" type="submit"
+          [disabled]="requestForm.invalid || !selectedSupplierIds.length || sending">
+          {{ sending ? 'Sending…' : 'Start negotiation round' }}
+        </button></div>
+      </form>
+    }
+  </section>
+
+  <section class="round-list">
+    <div class="card-heading"><div><h2>Round history</h2><p>{{ rounds.length }} recorded negotiation rounds</p></div></div>
+    @if (rounds.length === 0) { <p class="empty-state">No negotiation rounds for this RFQ yet.</p> }
+    @for (round of rounds; track round.negotiationRoundId) {
+      <article class="round-card">
+        <div class="round-heading"><div><strong>{{ round.supplierName }} · Round {{ round.roundNumber }}</strong>
+          <span class="status-pill" [class.open]="round.status === 'OPEN'">{{ round.status }}</span></div>
+          <span>Response due {{ round.responseDeadline | date:'medium' }}</span></div>
+        <p class="baseline">Baseline quotation version: {{ round.baselineQuotationVersion ?? '—' }}</p>
+        <div class="messages">
+          @for (message of round.messages; track message.messageId) {
+            <div class="message"><div><strong>{{ message.senderName }}</strong><span>{{ message.senderRole }}</span>
+              <time>{{ message.createdAt | date:'short' }}</time></div>
+              <p>{{ message.messageText }}</p>
+              @if (message.quotationVersionNumber) { <small>Linked quotation revision v{{ message.quotationVersionNumber }}</small> }
+            </div>
+          }
+        </div>
+        @if (round.status === 'OPEN') {
+          <div class="close-panel">
+            <label>Outcome
+              <select [name]="'outcome-' + round.negotiationRoundId"
+                [ngModel]="outcomes[round.negotiationRoundId] || 'AGREED'"
+                (ngModelChange)="outcomes[round.negotiationRoundId] = $event">
+                <option value="AGREED">Agreed</option><option value="NO_AGREEMENT">No agreement</option>
+                <option value="WITHDRAWN">Withdrawn</option><option value="CLOSED">Closed</option>
+              </select>
+            </label>
+            <label>Close remarks <input [name]="'remarks-' + round.negotiationRoundId"
+              [(ngModel)]="outcomeRemarks[round.negotiationRoundId]" maxlength="2000"></label>
+            <button class="secondary-button" type="button" (click)="closeRound(round)">Close round</button>
+          </div>
+        } @else {
+          <p class="outcome">Outcome: <strong>{{ round.outcome }}</strong> {{ round.outcomeRemarks }}</p>
+        }
+      </article>
+    }
+  </section>
+}

@@ -18,6 +18,7 @@ export class App {
       return [
         { label: 'Overview', path: '/dashboard', icon: '⌂' },
         { label: 'Invited RFQs & quotations', path: '/supplier-portal/quotations', icon: '▧' },
+        { label: 'Negotiation requests', path: '/supplier-portal/negotiations', icon: '↔' },
       ];
     }
     return [
@@ -25,6 +26,7 @@ export class App {
       { label: 'Suppliers', path: '/suppliers', icon: '▤' },
       { label: 'RFQ Management', path: '/rfqs', icon: '◎' },
       { label: 'Quotations', path: '/quotations', icon: '▧' },
+      { label: 'Negotiations', path: '/negotiations', icon: '↔' },
       { label: 'Approvals', path: '/approvals', icon: '✓' },
       { label: 'Reports', path: '/reports', icon: '▥' },
     ];
