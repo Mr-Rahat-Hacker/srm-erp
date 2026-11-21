@@ -1,0 +1,119 @@
+<div class="page-heading">
+  <div><span class="eyebrow">BUYER WORKSPACE / EVALUATION</span><h1>Quotation evaluation</h1>
+    <p>Record technical outcomes, commercial remarks and a justified supplier recommendation. No supplier is auto-selected.</p></div>
+</div>
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
+
+<section class="selector-card">
+  <label>RFQ
+    <select name="rfqId" [(ngModel)]="selectedRfqId" [disabled]="loading">
+      <option value="">Select one of your RFQs</option>
+      @for (rfq of rfqs; track rfq.rfqId) { <option [value]="rfq.rfqId">{{ rfq.rfqNumber }} · {{ rfq.title }}</option> }
+    </select>
+  </label>
+  <button class="primary-button" type="button" (click)="loadRfq()" [disabled]="!selectedRfqId || loading">
+    {{ loading ? 'Loading…' : 'Open evaluation workspace' }}
+  </button>
+</section>
+
+@if (comparison; as data) {
+  <div class="workspace-heading">
+    <div><span class="eyebrow">{{ data.rfqNumber }} · {{ data.currencyCode }}</span><h2>{{ data.title }}</h2></div>
+    <span>{{ submittedSuppliers.length }} submitted quotations</span>
+  </div>
+  @if (submittedSuppliers.length === 0) {
+    <section class="empty-state">No supplier quotation has been submitted for evaluation yet.</section>
+  }
+  <div class="supplier-grid">
+    @for (supplier of submittedSuppliers; track supplier.supplierId) {
+      <section class="supplier-card">
+        <div class="supplier-heading">
+          <div><h3>{{ supplier.legalName }}</h3><p>{{ supplier.supplierNumber }} · Submitted v{{ supplier.submittedVersion }}</p></div>
+          <strong class="total">{{ supplier.totalLandedCost | number:'1.2-2' }} {{ data.currencyCode }}</strong>
+        </div>
+        <div class="commercial-facts">
+          <span>Delivery {{ supplier.leadTimeDays === null ? '—' : supplier.leadTimeDays + ' days' }}</span>
+          <span>Validity {{ supplier.validityDate || '—' }}</span>
+          <span>{{ supplier.incoterms || 'No Incoterms' }}</span>
+        </div>
+        <div class="line-table">
+          <div class="line-header"><span>Material</span><span>Qty</span><span>Landed line</span></div>
+          @for (rfqLine of data.rfqLines; track rfqLine.rfqLineId) {
+            <div class="line-row">
+              <span><strong>{{ rfqLine.sapMaterialCode }}</strong><small>{{ rfqLine.description }}</small></span>
+              <span>{{ rfqLine.quantity }} {{ rfqLine.uomCode }}</span>
+              <span>{{ quoteFor(supplier, rfqLine.rfqLineId) | number:'1.2-2' }}</span>
+            </div>
+          }
+        </div>
+        @if (supplier.technicalDeviations) { <p class="deviation"><strong>Supplier technical deviations:</strong> {{ supplier.technicalDeviations }}</p> }
+
+        <form class="evaluation-form" #evaluationForm="ngForm" (ngSubmit)="saveEvaluation(supplier)">
+          <h4>Record evaluation</h4>
+          <div class="form-grid">
+            <label>Technical result
+              <select [name]="'technical-' + supplier.supplierId" [(ngModel)]="draftFor(supplier.supplierId).technicalStatus" required>
+                <option value="TECHNICALLY_ACCEPTED">Technically accepted</option>
+                <option value="TECHNICALLY_REJECTED">Technically rejected</option>
+                <option value="CLARIFICATION_REQUIRED">Clarification required</option>
+                <option value="CONDITIONALLY_ACCEPTED">Conditionally accepted</option>
+              </select>
+            </label>
+            <label>Technical remarks
+              <textarea [name]="'technicalRemarks-' + supplier.supplierId" rows="2" maxlength="4000"
+                [(ngModel)]="draftFor(supplier.supplierId).technicalRemarks"></textarea>
+            </label>
+            <label class="wide">Commercial evaluation remarks <span>*</span>
+              <textarea [name]="'commercialRemarks-' + supplier.supplierId" rows="3" maxlength="4000"
+                [(ngModel)]="draftFor(supplier.supplierId).commercialRemarks" required></textarea>
+            </label>
+            <label class="checkbox-label wide">
+              <input [name]="'recommend-' + supplier.supplierId" type="checkbox"
+                [(ngModel)]="draftFor(supplier.supplierId).recommendSupplier">
+              Recommend this supplier
+            </label>
+            @if (draftFor(supplier.supplierId).recommendSupplier) {
+              <label class="wide">Recommendation justification <span>*</span>
+                <textarea [name]="'recommendation-' + supplier.supplierId" rows="2" maxlength="4000"
+                  [(ngModel)]="draftFor(supplier.supplierId).recommendationJustification" required></textarea>
+              </label>
+            }
+          </div>
+          <button class="primary-button" type="submit"
+            [disabled]="evaluationForm.invalid || savingSupplierId !== '' || (draftFor(supplier.supplierId).recommendSupplier && !draftFor(supplier.supplierId).recommendationJustification.trim())">
+            {{ savingSupplierId === supplier.supplierId ? 'Saving…' : 'Save evaluation' }}
+          </button>
+        </form>
+
+        @if (technicalHistory(supplier.supplierId).length > 0 || commercialHistory(supplier.supplierId).length > 0) {
+          <details class="history-panel">
+            <summary>Evaluation history</summary>
+            @for (item of technicalHistory(supplier.supplierId); track item.quotationVersionId + item.evaluatedAt) {
+              <p><strong>Technical · {{ item.technicalStatus }}</strong> · {{ item.evaluatorName }} · {{ item.evaluatedAt | date:'short' }}
+                <small>{{ item.remarks || 'No technical remarks' }}</small></p>
+            }
+            @for (item of commercialHistory(supplier.supplierId); track item.quotationVersionId + item.evaluatedAt) {
+              <p><strong>Commercial · {{ item.comparisonBasis }}</strong> · {{ item.evaluatorName }} · {{ item.evaluatedAt | date:'short' }}
+                <small>{{ item.remarks }}</small></p>
+            }
+          </details>
+        }
+      </section>
+    }
+  </div>
+
+  @if (history; as evaluationHistory) {
+    @if (evaluationHistory.recommendations.length > 0) {
+      <section class="recommendations-card">
+        <h2>Recommendation history</h2>
+        @for (recommendation of evaluationHistory.recommendations; track recommendation.recommendationId) {
+          <article><div><strong>{{ recommendation.supplierName }}</strong><span>{{ recommendation.nonL1 ? 'Non-L1 recommendation' : 'L1 by landed-cost comparison' }}</span></div>
+            <p>{{ recommendation.justification }}</p>
+            <small>Quotation v{{ recommendation.quotationVersion }} · {{ recommendation.recommenderName }} · {{ recommendation.createdAt | date:'medium' }}</small>
+          </article>
+        }
+      </section>
+    }
+  }
+}
