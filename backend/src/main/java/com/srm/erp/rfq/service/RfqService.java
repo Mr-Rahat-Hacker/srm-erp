@@ -172,6 +172,21 @@ public class RfqService {
         if (updated != 1) {
             throw new ResponseStatusException(CONFLICT, "RFQ status changed; refresh and retry");
         }
+        jdbc.update("""
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT m.user_id, 'RFQ_INVITATION', channels.channel, 'QUEUED',
+                       'New RFQ invitation ' || r.rfq_number,
+                       'Your organization has been invited to ' || r.title || '. Submission deadline: '
+                       || to_char(r.submission_deadline AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' UTC.',
+                       '/supplier-portal/quotations'
+                FROM srm.rfq r
+                JOIN srm.rfq_invitation i ON i.rfq_id = r.rfq_id
+                JOIN srm.supplier_user_membership m ON m.supplier_id = i.supplier_id
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                WHERE r.rfq_id = ? AND i.invitation_status IN ('INVITED', 'ACKNOWLEDGED')
+                  AND m.membership_status = 'ACTIVE'
+                """, rfqId);
         writeAudit(buyerId, "RFQ_PUBLISHED", rfqId, null, header.rfqNumber(), "PUBLISHED");
         return findOne(rfqId, buyerId, true);
     }
