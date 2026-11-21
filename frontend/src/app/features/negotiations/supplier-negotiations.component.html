@@ -1,0 +1,63 @@
+<div class="page-heading">
+  <div><span class="eyebrow">SUPPLIER PORTAL / NEGOTIATIONS</span><h1>Negotiation requests</h1>
+    <p>Respond to buyer requests for your supplier organization and attach a submitted revised quotation when relevant.</p></div>
+  <button class="secondary-button" type="button" (click)="loadRounds()" [disabled]="loading">Refresh</button>
+</div>
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
+
+<div class="workspace">
+  <section class="round-list">
+    @if (loading) { <p class="empty-state">Loading negotiation requests…</p> }
+    @else if (rounds.length === 0) { <p class="empty-state">No negotiation requests for your organization.</p> }
+    @for (round of rounds; track round.negotiationRoundId) {
+      <button class="round-row" type="button" (click)="openRound(round)" [class.selected]="selected?.negotiationRoundId === round.negotiationRoundId">
+        <strong>{{ round.rfqNumber }} · Round {{ round.roundNumber }}</strong>
+        <span>{{ round.rfqTitle }}</span>
+        <small>{{ round.status }} · Due {{ round.responseDeadline | date:'medium' }}</small>
+      </button>
+    }
+  </section>
+
+  @if (selected; as round) {
+    <section class="detail-card">
+      <div class="card-heading"><div><span class="eyebrow">{{ round.rfqNumber }} · Round {{ round.roundNumber }}</span><h2>{{ round.rfqTitle }}</h2></div>
+        <button class="secondary-button" type="button" (click)="close()">Close</button></div>
+      <div class="round-meta"><span>Status <strong>{{ round.status }}</strong></span>
+        <span>Response deadline <strong>{{ round.responseDeadline | date:'medium' }}</strong></span>
+        <span>Baseline quotation <strong>v{{ round.baselineQuotationVersion ?? '—' }}</strong></span></div>
+      @if (deadlinePassed && round.status === 'OPEN') { <div class="notice error">Response deadline has passed. This round is read-only.</div> }
+      <div class="messages">
+        @for (message of round.messages; track message.messageId) {
+          <article class="message">
+            <div><strong>{{ message.senderRole === 'SUPPLIER' ? 'Your organization' : message.senderName }}</strong>
+              <time>{{ message.createdAt | date:'medium' }}</time></div>
+            <p>{{ message.messageText }}</p>
+            @if (message.quotationVersionNumber) { <small>Submitted quotation revision v{{ message.quotationVersionNumber }}</small> }
+          </article>
+        }
+      </div>
+      @if (round.status === 'OPEN' && !deadlinePassed) {
+        <form #replyForm="ngForm" (ngSubmit)="reply()">
+          <label>Your response <textarea name="replyText" [(ngModel)]="replyText" rows="4" maxlength="4000" required></textarea></label>
+          @if (eligibleVersions.length > 0) {
+            <label>Link a submitted revised quotation
+              <select name="quotationVersion" [(ngModel)]="selectedVersionId">
+                <option value="">No revised version attached</option>
+                @for (version of eligibleVersions; track version.quotationVersionId) {
+                  <option [value]="version.quotationVersionId">Version {{ version.versionNumber }} · {{ version.totalLandedCost }} {{ version.currencyCode }}</option>
+                }
+              </select>
+            </label>
+          }
+          <div class="form-actions"><button class="primary-button" type="submit" [disabled]="replyForm.invalid || saving">
+            {{ saving ? 'Sending…' : 'Send response' }}
+          </button></div>
+        </form>
+        <p class="helper-text">To include revised pricing, first submit a new quotation version in the RFQ quotation page, then select that version above.</p>
+      } @else if (round.status === 'CLOSED') {
+        <div class="outcome"><strong>{{ round.outcome }}</strong> {{ round.outcomeRemarks }}</div>
+      }
+    </section>
+  }
+</div>
