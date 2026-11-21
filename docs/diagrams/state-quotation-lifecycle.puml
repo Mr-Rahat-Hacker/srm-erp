@@ -1,0 +1,50 @@
+@startuml
+title SRM Quotation Lifecycle - State Machine
+hide empty description
+skinparam shadowing false
+skinparam state {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+
+[*] --> Draft : Supplier starts response
+Draft --> Submitted : Submit before deadline
+Draft --> Withdrawn : Supplier withdraws draft
+Submitted --> ValidationFailed : Mandatory data invalid
+ValidationFailed --> Draft : Supplier corrects response
+before deadline
+Submitted --> TechnicallyUnderReview : Technical evaluation required
+Submitted --> CommerciallyUnderReview : Technical review not configured
+TechnicallyUnderReview --> ClarificationRequired : Clarification requested
+ClarificationRequired --> TechnicallyUnderReview : Supplier responds
+TechnicallyUnderReview --> TechnicallyAccepted : Technical requirements pass
+TechnicallyUnderReview --> TechnicallyRejected : Technical requirements fail
+TechnicallyAccepted --> CommerciallyUnderReview : Commercial evaluation starts
+CommerciallyUnderReview --> UnderNegotiation : Negotiation initiated
+CommerciallyUnderReview --> Finalized : No negotiation required
+UnderNegotiation --> UnderNegotiation : New negotiation round/version
+UnderNegotiation --> Finalized : Final terms confirmed
+Finalized --> Awarded : RFQ award recorded for supplier
+Finalized --> Unsuccessful : Another supplier is awarded
+Submitted --> Disqualified : Authorized disqualification
+with reason
+TechnicallyRejected --> Unsuccessful : Evaluation completed
+Withdrawn --> [*]
+TechnicallyRejected --> [*]
+Disqualified --> [*]
+Awarded --> [*]
+Unsuccessful --> [*]
+
+note right of Submitted
+A submitted quotation is immutable.
+Any permitted revision creates a new
+version with actor, timestamp and history.
+No supplier can view competing quotations.
+end note
+
+note bottom of CommerciallyUnderReview
+Comparison basis (for example landed cost),
+ranking and evaluation criteria are configurable.
+end note
+@enduml
