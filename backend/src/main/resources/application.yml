@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: srm-erp-api
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
   datasource:
     url: ${DB_URL:jdbc:postgresql://postgres:5432/srm_erp}
     username: ${DB_USERNAME:srm_user}
@@ -30,6 +34,8 @@ management:
       show-details: never
 
 srm:
+  storage:
+    documents-dir: ${SRM_DOCUMENTS_DIR:./var/srm-documents}
   security:
     jwt:
       secret: ${SRM_JWT_SECRET:local-development-secret-change-this-before-deployment-2026}
