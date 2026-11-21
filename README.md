@@ -46,6 +46,10 @@ After the SRM release is proven, the product may expand into broader cloud procu
 
 ## Security and access control
 
+The first release includes backend-enforced Role-Based Access Control (RBAC), supplier organization data isolation, approval-task assignment checks, segregation of duties, a read-only auditor role and a separately controlled Super Admin role for platform governance. An append-only audit trail records important security and business actions. See [RBAC role and permission matrix](docs/requirements/rbac-role-permission-matrix.md) and [Audit Log Specification](docs/requirements/audit-log-specification.md).
+
+## Security and access control
+
 The first release includes backend-enforced Role-Based Access Control (RBAC), supplier organization data isolation, approval-task assignment checks, segregation of duties and read-only auditor access. See [RBAC role and permission matrix](docs/requirements/rbac-role-permission-matrix.md).
 
 ## Technology
