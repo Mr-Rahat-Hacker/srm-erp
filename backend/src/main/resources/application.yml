@@ -58,3 +58,9 @@ srm:
       public-base-url: ${SRM_PUBLIC_BASE_URL:http://localhost:4200}
       max-attempts: ${SRM_EMAIL_MAX_ATTEMPTS:5}
       poll-interval-ms: ${SRM_EMAIL_POLL_INTERVAL_MS:30000}
+  sap:
+    pir:
+      enabled: ${SAP_PIR_ENABLED:false}
+      gateway-url: ${SAP_PIR_GATEWAY_URL:}
+      bearer-token: ${SAP_PIR_GATEWAY_TOKEN:}
+      poll-interval-ms: ${SAP_PIR_POLL_INTERVAL_MS:30000}
