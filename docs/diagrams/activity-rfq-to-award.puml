@@ -1,0 +1,196 @@
+@startuml
+title SRM — RFQ to Award Activity Diagram
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor white
+  BorderColor #334155
+  DiamondBackgroundColor #f8fafc
+  DiamondBorderColor #334155
+}
+|Procurement Buyer|
+start
+:Create RFQ draft;
+:Enter RFQ header, plant, department,
+purchasing group, currency and deadlines;
+:Add one or more line items using
+existing SAP Material Code references;
+:Add technical/commercial terms and attachments;
+:Select qualified and eligible suppliers;
+:Submit RFQ for validation;
+
+|SRM Platform|
+:Validate lines, suppliers, deadline,
+required fields and attachments;
+:Check duplicate active RFQs;
+if (RFQ validation passed?) then (Yes)
+  :Create RFQ approval instance
+if approval policy requires it;
+else (No)
+  :Return validation errors to buyer;
+  |Procurement Buyer|
+  :Correct RFQ draft;
+  stop
+endif
+
+if (RFQ approval required?) then (Yes)
+  |RFQ Approver|
+  :Review RFQ scope, suppliers,
+terms and supporting documents;
+  if (Decision?) then (Approve)
+    :Approve RFQ;
+  elseif (Send Back)
+    :Send back with remarks;
+    |Procurement Buyer|
+    :Revise RFQ;
+    stop
+  else (Reject / Hold)
+    :Reject or hold with reason;
+    stop
+  endif
+else (No)
+endif
+
+|Procurement Buyer|
+:Publish approved RFQ;
+
+|SRM Platform|
+:Generate unique RFQ number;
+:Send invitation notifications;
+:Set response deadline and RFQ status;
+|Supplier User|
+:Open invited RFQ;
+:Review items, specifications,
+attachments and commercial terms;
+:Choose acknowledge / participate / decline;
+if (Supplier participates?) then (Yes)
+  :Prepare quotation;
+  :Enter item-level prices, discounts,
+taxes, freight, P&F and other charges;
+  :Enter delivery, MOQ, payment,
+Incoterms, validity and deviations;
+  :Review calculated net price and landed cost;
+  :Save draft or submit quotation;
+  if (Submission valid and before deadline?) then (Yes)
+    :Submit quotation;
+  else (No)
+    :Correct draft or request permitted exception;
+    stop
+  endif
+else (Decline)
+  :Submit mandatory decline reason;
+  stop
+endif
+
+|SRM Platform|
+:Timestamp and version quotation;
+:Keep supplier bids confidential;
+:Send acknowledgement to supplier;
+:Lock submissions at deadline unless
+an authorized extension is recorded;
+if (Minimum response count met?) then (Yes)
+else (No)
+  |Procurement Buyer|
+  :Choose authorized action:
+remind / extend / add suppliers /
+continue with exception / cancel;
+  |SRM Platform|
+  :Record action and notify affected suppliers;
+endif
+
+|Technical Evaluator|
+:Review technical compliance,
+deviations, capability and quality;
+:Record technical outcome;
+if (Technically accepted?) then (Yes / Conditional)
+  |Commercial Evaluator|
+  :Open commercial evaluation per bid policy;
+  :Generate supplier-wise and item-wise comparison;
+  :Calculate landed cost and L1/L2/L3
+using configured comparison basis;
+  :Review benchmark and previous-price variance;
+else (Rejected / Clarification)
+  |SRM Platform|
+  :Record technical result and clarification;
+  :Exclude rejected bids from commercial
+ranking when technical-commercial policy applies;
+endif
+
+|Procurement Buyer|
+:Shortlist eligible suppliers;
+:Conduct negotiation rounds;
+:Record previous/revised prices,
+terms, confirmations and attachments;
+:Preserve each negotiation version;
+:Enter final settled rate;
+:Calculate savings and price variances;
+:Recommend supplier with justification;
+if (Recommended supplier is non-L1?) then (Yes)
+  :Enter mandatory non-L1 justification;
+else (No)
+endif
+:Submit rate recommendation for approval;
+
+|SRM Platform|
+:Resolve approval route using configured
+value, plant, group, category,
+project and deviation rules;
+if (Non-L1 or deviation exception?) then (Yes)
+  :Add configured additional approval tasks;
+else (No)
+endif
+
+|Rate Approver|
+:Review RFQ, technical result, comparison,
+negotiation, settled rate, savings,
+justification and approval history;
+if (Approval decision?) then (Approve)
+  :Approve assigned approval task;
+elseif (Send Back)
+  :Send back with mandatory remarks;
+  |Procurement Buyer|
+  :Update recommendation / commercial details;
+  :Resubmit while retaining prior history;
+  stop
+elseif (Hold / Clarification)
+  :Put on hold or request clarification
+with mandatory remarks;
+  stop
+else (Reject)
+  :Reject with mandatory reason;
+  stop
+endif
+
+|SRM Platform|
+if (All required approval tasks approved?) then (Yes)
+  :Set status = Award Approved;
+else (No)
+  :Keep approval pending and route
+next assigned approval task;
+  stop
+endif
+
+|Procurement Buyer|
+:Issue award to selected supplier;
+
+|SRM Platform|
+:Create award record and lock approved
+supplier and settled-rate values;
+:Notify selected supplier;
+:Notify unsuccessful suppliers without
+exposing competitor confidential data;
+:Record award, notifications and status
+history in append-only audit trail;
+:Set status = Awarded;
+:Close RFQ after configured closure conditions;
+:Set status = Closed;
+note right
+  Post-award changes require a formal
+  amendment workflow.
+  SAP PIR / purchasing rate-condition
+  integration is a later controlled milestone.
+  PR, PO, GRN, invoice verification,
+  MRP and Schedule Agreement execution
+  remain outside this Phase-1 workflow.
+end note
+stop
+@enduml
