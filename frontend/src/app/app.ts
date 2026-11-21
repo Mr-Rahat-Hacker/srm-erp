@@ -19,6 +19,7 @@ export class App {
         { label: 'Overview', path: '/dashboard', icon: '⌂' },
         { label: 'Invited RFQs & quotations', path: '/supplier-portal/quotations', icon: '▧' },
         { label: 'Negotiation requests', path: '/supplier-portal/negotiations', icon: '↔' },
+        { label: 'Notifications', path: '/notifications', icon: '◉' },
       ];
     }
     const items = [
@@ -29,6 +30,7 @@ export class App {
       { label: 'Evaluations', path: '/evaluations', icon: '◇' },
       { label: 'Negotiations', path: '/negotiations', icon: '↔' },
     ];
+    items.push({ label: 'Notifications', path: '/notifications', icon: '◉' });
     if (roles.includes('PROCUREMENT_APPROVER')) {
       items.push({ label: 'Approvals', path: '/approvals', icon: '✓' });
     }
