@@ -1,53 +1,64 @@
-# SRM ERP
+# SRM Platform
 
-Supplier Relationship Management (SRM) ERP is a cloud-developed procurement and supplier management application. It is designed as an independent system with a future SAP integration layer.
+Independent, cloud-based Supplier Relationship Management application.
 
-## Project goals
+## Product vision
 
-- Manage supplier, material and purchasing master data.
-- Run RFQ and quotation comparison workflows.
-- Create and track purchase requisitions and purchase orders.
-- Maintain Purchase Info Records and Schedule Agreements.
-- Track goods receipt, invoice status and procurement reporting.
-- Provide controlled integration with SAP S/4HANA when configured.
+Digitize supplier onboarding, qualification, RFQ, quotation/bidding, commercial evaluation, negotiation, approval, award and supplier communication workflows.
 
-## Planned technology stack
+**The first release is SRM, not a full Procurement ERP.** The platform complements SAP in complex manufacturing environments; it does not replace SAP master-data ownership or procurement execution.
 
-| Layer | Technology |
-|---|---|
-| Frontend | Angular |
-| Backend | Java + Spring Boot |
-| Database | PostgreSQL |
-| API | REST / JSON |
-| Development | GitHub Codespaces |
-| CI | GitHub Actions |
+## First-release modules
 
-## Repository layout
+1. Supplier self-registration and company profile
+2. Supplier contacts and document upload (GST, PAN, certifications)
+3. Internal supplier verification, qualification, correction request, approval and rejection
+4. Mapping an existing SAP Vendor Code after the authorized SAP process creates the vendor
+5. RFQ creation using SAP Material Code references (no Material Master creation in SRM)
+6. RFQ invitation to multiple approved suppliers and supplier portal
+7. Supplier quotation / bid submission
+8. Quotation comparison and commercial evaluation
+9. Negotiation rounds and version-controlled revised quotations
+10. Supplier recommendation, justification and configurable approval
+11. Award decision and selected / unsuccessful supplier notifications
+12. Email notifications, audit trail, status tracking, dashboards and reports
 
-```text
-docs/             Requirements, architecture and UML
-frontend/         Angular application (planned)
-backend/          Spring Boot API (planned)
-database/         PostgreSQL schema and migrations
-integrations/sap/ SAP integration contracts and adapters
-tests/            Test strategy and shared test assets
-.github/workflows CI workflows
-```
+## Explicitly excluded from initial SRM release
 
-## Development principles
+- Material Master creation or maintenance
+- SAP Vendor Master / Business Partner creation
+- Purchase Requisition creation
+- Purchase Order creation or execution
+- Goods Receipt / GRN
+- Invoice verification
+- MRP
+- Schedule Agreement execution
 
-1. Build the SRM application independently; SAP is an optional external integration.
-2. Keep business rules in the backend, not in the Angular UI.
-3. Use PostgreSQL as the system-of-record database for the SRM application.
-4. Keep supplier, material, purchasing and inventory data auditable.
-5. Deliver features in small, tested increments.
+SAP remains responsible for SAP master data and complex manufacturing procurement execution. SRM uses SAP Material Codes as RFQ references and maps an existing SAP Vendor Code.
+
+## Final initial-SRM integration milestone
+
+Controlled creation or update of SAP Purchase Info Records (PIR) and relevant purchasing rates/conditions, subject to authorized SAP APIs, validations, approvals and audit logging.
+
+## Future direction
+
+After the SRM release is proven, the product may expand into broader cloud procurement for organizations without a complete ERP procurement process. This is future scope, not a first-release commitment.
+
+## Technology
+
+- Frontend: Angular
+- Backend: Java + Spring Boot REST APIs
+- Database: PostgreSQL
+- Security: Spring Security, JWT and role-based access control
+- Notifications: SMTP / JavaMailSender with logs and retry handling
+- Development: GitHub Codespaces
+
+## Repository guide
+
+- [Product scope](docs/requirements/mvp-scope.md)
+- [SRM workflow](docs/requirements/srm-workflow.md)
+- [Architecture](docs/architecture/overview.md)
 
 ## Current status
 
-**Phase 0 — Repository and architecture foundation.**
-
-See [MVP scope](docs/requirements/mvp-scope.md) and [architecture overview](docs/architecture/overview.md).
-
-## Local development
-
-The initial development environment will be GitHub Codespaces. Setup instructions will be added with the first runnable application scaffold.
+Cloud development foundation initialized. Product scope is being baselined before feature implementation.
