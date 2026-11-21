@@ -2,8 +2,14 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { SupplierService } from './supplier.service';
-import { Supplier, SupplierRegistration } from './supplier.models';
+import {
+  ApiResponse,
+  Supplier,
+  SupplierLifecycleResult,
+  SupplierRegistration,
+} from './supplier.models';
 import { SupplierDocumentsComponent } from './supplier-documents.component';
 
 @Component({
@@ -19,6 +25,8 @@ export class SuppliersComponent implements OnInit {
   protected loading = false;
   protected saving = false;
   protected detailsLoading = false;
+  protected lifecycleBusy = false;
+  protected lifecycleRemarks = '';
   protected showForm = false;
   protected selectedSupplier: Supplier | null = null;
   protected successMessage = '';
@@ -55,6 +63,7 @@ export class SuppliersComponent implements OnInit {
     this.supplierService.getSupplier(supplier.supplierId).subscribe({
       next: (response) => {
         this.selectedSupplier = response.data;
+        this.lifecycleRemarks = '';
         this.detailsLoading = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -70,6 +79,57 @@ export class SuppliersComponent implements OnInit {
 
   protected closeDetails(): void {
     this.selectedSupplier = null;
+    this.lifecycleRemarks = '';
+  }
+
+  protected submitForReview(): void {
+    if (!this.selectedSupplier) return;
+    this.runLifecycleAction(this.supplierService.submitSupplier(this.selectedSupplier.supplierId));
+  }
+
+  protected startSupplierReview(): void {
+    if (!this.selectedSupplier) return;
+    this.runLifecycleAction(this.supplierService.startSupplierReview(this.selectedSupplier.supplierId));
+  }
+
+  protected decideSupplier(decision: 'APPROVE' | 'RETURN' | 'REJECT'): void {
+    if (!this.selectedSupplier) return;
+    const remarks = this.lifecycleRemarks.trim();
+    if (decision !== 'APPROVE' && !remarks) {
+      this.errorMessage = 'Add a reason before returning or rejecting this supplier.';
+      return;
+    }
+    this.runLifecycleAction(
+      this.supplierService.decideSupplier(this.selectedSupplier.supplierId, decision, remarks),
+    );
+  }
+
+  private runLifecycleAction(request: Observable<ApiResponse<SupplierLifecycleResult>>): void {
+    if (!this.selectedSupplier || this.lifecycleBusy) return;
+    this.lifecycleBusy = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    request.subscribe({
+      next: (response) => {
+        const supplierId = response.data.supplierId;
+        const currentStatus = response.data.currentStatus;
+        this.selectedSupplier = { ...this.selectedSupplier!, lifecycleStatus: currentStatus };
+        this.suppliers = this.suppliers.map((supplier) =>
+          supplier.supplierId === supplierId ? { ...supplier, lifecycleStatus: currentStatus } : supplier,
+        );
+        this.successMessage = response.message || `Supplier status changed to ${currentStatus}.`;
+        this.lifecycleRemarks = '';
+        this.lifecycleBusy = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.status === 403
+          ? 'Your account is not allowed to perform this supplier workflow action.'
+          : error.status === 409
+            ? error.error?.message ?? 'The supplier status changed. Refresh the profile and try again.'
+            : error.error?.message ?? 'Unable to update the supplier status.';
+        this.lifecycleBusy = false;
+      },
+    });
   }
 
   protected submit(): void {
