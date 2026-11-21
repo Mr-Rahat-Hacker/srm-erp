@@ -63,6 +63,7 @@ The first release includes backend-enforced Role-Based Access Control (RBAC), su
 
 ## Repository guide
 
+- [Software Requirements Specification (SRS)](docs/requirements/software-requirements-specification.md)
 - [Product scope](docs/requirements/mvp-scope.md)
 - [SRM workflow](docs/requirements/srm-workflow.md)
 - [Architecture](docs/architecture/overview.md)
