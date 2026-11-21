@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponse, ApprovalTask, AwardRecord, EligibleApprover } from './approval.models';
+import { ApiResponse, ApprovalReviewContext, ApprovalTask, AwardRecord, EligibleApprover } from './approval.models';
 
 @Injectable({ providedIn: 'root' })
 export class ApprovalService {
@@ -32,6 +32,12 @@ export class ApprovalService {
 
   getMyTasks(): Observable<ApiResponse<ApprovalTask[]>> {
     return this.http.get<ApiResponse<ApprovalTask[]>>('/api/v1/approvals/my-tasks');
+  }
+
+  getReviewContext(taskId: string): Observable<ApiResponse<ApprovalReviewContext>> {
+    return this.http.get<ApiResponse<ApprovalReviewContext>>(
+      `/api/v1/approvals/tasks/${taskId}/review-context`,
+    );
   }
 
   decide(taskId: string, decision: 'APPROVE' | 'REJECT' | 'RETURN_FOR_REVISION', comments: string): Observable<ApiResponse<ApprovalTask>> {
