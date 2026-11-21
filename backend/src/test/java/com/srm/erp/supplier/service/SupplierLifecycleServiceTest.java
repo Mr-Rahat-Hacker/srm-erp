@@ -40,15 +40,15 @@ class SupplierLifecycleServiceTest {
     @BeforeEach
     void setUp() {
         service = new SupplierLifecycleService(jdbc);
-        doAnswer(invocation -> {
-            updateArguments.add(invocation.getArgument(1));
-            return 1;
-        }).when(jdbc).update(anyString(), any(Object[].class));
     }
 
     @Test
     void submitMovesDraftToSubmittedAndAuditsTheAuthorizedAdminActor() {
         givenStatus("DRAFT");
+        doAnswer(invocation -> {
+            updateArguments.add(invocation.getArgument(1));
+            return 1;
+        }).when(jdbc).update(anyString(), any(Object[].class));
 
         var result = service.submit(SUPPLIER_ID, ACTOR_ID);
 
@@ -67,7 +67,6 @@ class SupplierLifecycleServiceTest {
                 () -> service.startReview(SUPPLIER_ID, ACTOR_ID));
 
         assertEquals(409, exception.getStatusCode().value());
-        assertEquals(0, updateArguments.size());
         verify(jdbc, never()).update(anyString(), any(Object[].class));
     }
 
@@ -79,7 +78,6 @@ class SupplierLifecycleServiceTest {
                 () -> service.decide(SUPPLIER_ID, ACTOR_ID, "REJECT", "  "));
 
         assertEquals(400, exception.getStatusCode().value());
-        assertEquals(0, updateArguments.size());
         verify(jdbc, never()).update(anyString(), any(Object[].class));
     }
 
