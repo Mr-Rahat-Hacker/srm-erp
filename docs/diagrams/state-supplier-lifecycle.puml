@@ -1,0 +1,42 @@
+@startuml
+title SRM Supplier Lifecycle - State Machine
+hide empty description
+skinparam shadowing false
+skinparam state {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+
+[*] --> Draft : Start registration
+Draft --> Submitted : Submit profile and documents
+Draft --> [*] : Abandon registration
+
+Submitted --> UnderReview : Validate submission
+UnderReview --> CorrectionRequired : Send back with remarks
+UnderReview --> OnHold : Hold with reason
+UnderReview --> Rejected : Reject with reason
+UnderReview --> Approved : All required reviews approved
+
+CorrectionRequired --> Draft : Supplier edits permitted fields
+OnHold --> UnderReview : Resume review
+Rejected --> [*] : Close rejected application
+Approved --> PendingSAPVendorMapping : Internal supplier number assigned
+
+state "SAP Vendor Mapping" as PendingSAPVendorMapping
+PendingSAPVendorMapping --> Active : Existing SAP Vendor Code mapped
+and eligibility checks pass
+PendingSAPVendorMapping --> Active : Mapping gate configured as optional
+and activation authorized
+Active --> Suspended : Suspend with reason
+Suspended --> Active : Reinstate with authorization
+Active --> Inactive : Deactivate with authorization
+Inactive --> [*]
+
+note right of PendingSAPVendorMapping
+SAP remains system of record for Vendor Master.
+SRM does not create the SAP Vendor Master.
+Mapping requirement before RFQ eligibility
+is a configurable policy decision.
+end note
+@enduml
