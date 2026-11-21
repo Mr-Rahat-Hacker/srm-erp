@@ -15,10 +15,11 @@ Use least privilege, deny by default, and validate both role permissions and rec
 - **SUPPLIER_VERIFIER** — reviews supplier registrations and documents, requests corrections and records verification outcomes.
 - **PROCUREMENT_BUYER** — manages qualified supplier selection for RFQs, creates RFQs, invites suppliers, evaluates bids, negotiates and recommends award.
 - **PROCUREMENT_APPROVER** — reviews assigned approval requests and approves, rejects or returns them for revision.
-- **SRM_ADMIN** — manages application configuration, users, roles and access assignments. Administrative access does not automatically grant authority to approve a business transaction.
+- **SRM_ADMIN** — manages day-to-day application configuration and operational user support within permissions delegated by the Super Admin. Does not automatically grant authority to approve a business transaction.
+- **SUPER_ADMIN** — highest platform governance role. Manages SRM administrators, global security settings, role/permission definitions, tenant / organization configuration and emergency access. Super Admin actions are always audited. Super Admin does not silently alter or approve business decisions; exceptional access must be justified and traceable.
 - **AUDITOR** — read-only access to authorized business records, approval decisions and audit history.
 
-A person may hold more than one role only where organizational policy permits it. Conflicting duties must be controlled.
+A person may hold more than one role only where organizational policy permits it. Conflicting duties must be controlled. SUPER_ADMIN is a separately controlled, highly privileged role and should be assigned to very few trusted platform owners.
 
 ## 3. Permission matrix
 
@@ -38,8 +39,10 @@ Legend: C = create, R = read, U = update, A = action / decision, — = no access
 | Recommend supplier | — | — | A | R | No business edit | R |
 | Approve / reject / return | — | — | — | A (assigned tasks only) | — | R |
 | Record award | — | — | A (after approval) | A only if explicitly assigned by workflow | — | R |
-| View audit history | Own activity only | Authorized scope | Authorized scope | Assigned scope | R | R |
-| Manage users / roles | — | — | — | — | A | — |
+| View audit history | Own activity only | Authorized scope | Authorized scope | Assigned scope | R (authorized scope) | R (global) | R |
+| Manage own supplier users (if enabled) | A (own organization only) | — | — | — | Support / delegated | — | — |
+| Manage internal users / roles | — | — | — | — | A (delegated) | A (global) | — |
+| Manage global security / platform settings | — | — | — | — | — | A | — |
 | Configure workflow / reference settings | — | — | — | — | A | R |
 
 The matrix is an initial product policy. Exact field-level access and organization-specific delegation must be confirmed during detailed design.
@@ -57,9 +60,10 @@ The matrix is an initial product policy. Exact field-level access and organizati
 9. Apply segregation of duties: by default, the user who submitted a recommendation cannot approve that same award. Any exception must be explicitly configured and audited.
 10. SRM_ADMIN manages identities and permissions but does not receive automatic business approval powers.
 11. AUDITOR is read-only; no create, update, delete, submit, negotiate, approve or award actions.
-12. Record successful and denied sensitive authorization events where appropriate, and always audit business decisions and role/permission changes.
-13. Revoke or re-evaluate access when a user is disabled, supplier is suspended, invitation expires or assignment changes.
-14. Never trust a supplier ID, RFQ ID, quotation ID or approval task ID supplied by the client without checking the authenticated user's relationship to that record.
+12. SUPER_ADMIN privileges are limited to platform governance and emergency administration; every privileged action must capture actor, timestamp, target, action, reason and outcome. Super Admin must not edit quotation values, negotiation records, approval decisions or award outcomes as an ordinary administrative shortcut.
+13. Record successful and denied sensitive authorization events where appropriate, and always audit business decisions and role/permission changes.
+14. Revoke or re-evaluate access when a user is disabled, supplier is suspended, invitation expires or assignment changes.
+15. Never trust a supplier ID, RFQ ID, quotation ID or approval task ID supplied by the client without checking the authenticated user's relationship to that record.
 
 ## 5. Authentication and access lifecycle
 
