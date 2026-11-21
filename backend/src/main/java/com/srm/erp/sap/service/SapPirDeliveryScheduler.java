@@ -57,14 +57,25 @@ public class SapPirDeliveryScheduler {
                             sanitized_error = NULL, updated_at = now()
                         WHERE integration_event_id = ? AND status = 'SENDING'
                         """, externalReference, response.getStatusCode().value(), job.id());
+                auditSystem(job.id(), "SAP_PIR_GATEWAY_SUCCEEDED", "SUCCESS", externalReference);
             } catch (Exception failure) {
                 jdbc.update("""
                         UPDATE srm.sap_integration_event
                         SET status = 'FAILED', sanitized_error = ?, updated_at = now()
                         WHERE integration_event_id = ? AND status = 'SENDING'
                         """, failure.getClass().getSimpleName(), job.id());
+                auditSystem(job.id(), "SAP_PIR_GATEWAY_FAILED", "FAILURE",
+                        failure.getClass().getSimpleName());
             }
         }
+    }
+
+    private void auditSystem(UUID eventId, String action, String outcome, String reason) {
+        jdbc.update("""
+                INSERT INTO srm.audit_event
+                    (actor_type, effective_roles, action_code, entity_type, entity_id, outcome, reason)
+                VALUES ('SYSTEM', ARRAY['SAP_INTEGRATION'], ?, 'SAP_INTEGRATION_EVENT', ?, ?, ?)
+                """, action, eventId, outcome, reason);
     }
 
     private List<SapJob> claimQueued() {
