@@ -5,7 +5,7 @@ spring:
   application:
     name: srm-erp-api
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/srm_erp}
+    url: ${DB_URL:jdbc:postgresql://postgres:5432/srm_erp}
     username: ${DB_USERNAME:srm_user}
     password: ${DB_PASSWORD:srm_local_password}
   jpa:
