@@ -28,6 +28,23 @@ public class SupplierLifecycleService {
     }
 
     @Transactional
+    public LifecycleResult submitForSupplierUser(UUID supplierId, UUID actorId) {
+        Boolean member = jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM srm.supplier_user_membership
+                    WHERE supplier_id = ? AND user_id = ? AND membership_status = 'ACTIVE')
+                """, Boolean.class, supplierId, actorId);
+        if (!Boolean.TRUE.equals(member)) {
+            throw new ResponseStatusException(NOT_FOUND, "Supplier not found");
+        }
+        String current = currentStatus(supplierId);
+        if (!"DRAFT".equals(current) && !"CORRECTION_REQUIRED".equals(current)) {
+            throw new ResponseStatusException(CONFLICT, "Only draft or correction-required suppliers can be submitted");
+        }
+        return transition(supplierId, actorId, current, "SUBMITTED", "SUPPLIER_SUBMITTED", null, "SUPPLIER_USER");
+    }
+
+    @Transactional
     public LifecycleResult startReview(UUID supplierId, UUID actorId) {
         String current = currentStatus(supplierId);
         if (!"SUBMITTED".equals(current)) {
