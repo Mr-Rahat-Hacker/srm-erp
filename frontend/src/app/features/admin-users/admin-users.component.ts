@@ -13,7 +13,7 @@ import { AdminUserService } from './admin-user.service';
 export class AdminUsersComponent implements OnInit {
   private readonly service = inject(AdminUserService);
   protected users: AdminUser[] = [];
-  protected roles = ['SRM_ADMIN', 'SUPPLIER_VERIFIER', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER', 'AUDITOR'];
+  protected roles = ['SUPER_ADMIN', 'SRM_ADMIN', 'SUPPLIER_VERIFIER', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER', 'AUDITOR'];
   protected form: CreateAdminUser = this.emptyForm();
   protected loading = false;
   protected saving = false;
