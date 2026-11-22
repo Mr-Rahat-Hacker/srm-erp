@@ -51,4 +51,8 @@ public class JwtService {
         if (!(claim instanceof List<?> values)) return List.of();
         return values.stream().filter(String.class::isInstance).map(String.class::cast).toList();
     }
+
+    public long expirationSeconds() {
+        return expirationSeconds;
+    }
 }
