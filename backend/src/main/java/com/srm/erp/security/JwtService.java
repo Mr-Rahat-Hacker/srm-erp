@@ -3,12 +3,15 @@ package com.srm.erp.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,9 +21,19 @@ public class JwtService {
     private final long expirationSeconds;
 
     public JwtService(
-            @Value("${srm.security.jwt.secret}") String secret,
-            @Value("${srm.security.jwt.expiration-seconds:3600}") long expirationSeconds) {
-        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+            @Value("${srm.security.jwt.secret:}") String secret,
+            @Value("${srm.security.jwt.expiration-seconds:3600}") long expirationSeconds,
+            Environment environment) {
+        byte[] bytes;
+        if (secret == null || secret.isBlank()) {
+            if (environment.acceptsProfiles(Profiles.of("prod", "production"))) {
+                throw new IllegalStateException("SRM_JWT_SECRET must be configured for production");
+            }
+            bytes = new byte[32];
+            new SecureRandom().nextBytes(bytes);
+        } else {
+            bytes = secret.getBytes(StandardCharsets.UTF_8);
+        }
         if (bytes.length < 32) {
             throw new IllegalStateException("SRM JWT secret must contain at least 32 UTF-8 bytes");
         }
