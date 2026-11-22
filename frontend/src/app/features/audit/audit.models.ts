@@ -18,6 +18,14 @@ export interface AuditEvent {
   changedFields: string | null;
 }
 
+export interface PageData<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export interface AuditSearchFilters {
   action?: string;
   entityType?: string;
@@ -25,5 +33,6 @@ export interface AuditSearchFilters {
   actorUserId?: string;
   from?: string;
   to?: string;
-  limit?: number;
+  page?: number;
+  size?: number;
 }
