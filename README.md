@@ -48,7 +48,7 @@ After the SRM release is proven, the product may expand into broader cloud procu
 
 The first release includes backend-enforced Role-Based Access Control (RBAC), supplier organization data isolation, approval-task assignment checks, segregation of duties, a read-only auditor role and a separately controlled Super Admin role for platform governance. An append-only audit trail records important security and business actions. See [RBAC role and permission matrix](docs/requirements/rbac-role-permission-matrix.md) and [Audit Log Specification](docs/requirements/audit-log-specification.md).
 
-For production, set `SRM_JWT_SECRET` to a randomly generated value of at least 32 UTF-8 bytes and activate the `prod` or `production` profile. The backend refuses to start without the secret in those profiles. Development uses a process-random key when the variable is omitted, so tokens expire on restart.
+For production, set `SRM_JWT_SECRET` to a randomly generated value of at least 32 UTF-8 bytes and configure `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`. Activate the `prod` or `production` profile; the backend refuses to start without these values and disables the public API documentation endpoints in those profiles. Development uses a process-random JWT key when the variable is omitted, so tokens expire on restart.
 
 ## Technology
 
