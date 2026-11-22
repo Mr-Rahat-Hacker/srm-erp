@@ -19,6 +19,10 @@ export class SupplierService {
     return this.http.get<ApiResponse<Supplier[]>>(`${API_BASE_URL}/suppliers`);
   }
 
+  getMySupplierProfiles(): Observable<ApiResponse<Supplier[]>> {
+    return this.http.get<ApiResponse<Supplier[]>>(`${API_BASE_URL}/supplier/profiles`);
+  }
+
   getSupplier(supplierId: string): Observable<ApiResponse<Supplier>> {
     return this.http.get<ApiResponse<Supplier>>(`${API_BASE_URL}/suppliers/${supplierId}`);
   }
