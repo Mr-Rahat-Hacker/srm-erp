@@ -49,7 +49,7 @@ srm:
     documents-dir: ${SRM_DOCUMENTS_DIR:./var/srm-documents}
   security:
     jwt:
-      secret: ${SRM_JWT_SECRET:local-development-secret-change-this-before-deployment-2026}
+      secret: ${SRM_JWT_SECRET:}
       expiration-seconds: ${SRM_JWT_EXPIRATION_SECONDS:3600}
   notifications:
     email:
