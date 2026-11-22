@@ -14,28 +14,37 @@ export class App {
 
   protected get navigation() {
     const roles = this.currentUser?.roles ?? [];
-    if (roles.includes('SUPPLIER_USER') && !roles.some((role) => role !== 'SUPPLIER_USER')) {
-      return [
-        { label: 'Overview', path: '/dashboard', icon: '⌂' },
-        { label: 'Invited RFQs & quotations', path: '/supplier-portal/quotations', icon: '▧' },
-        { label: 'Company documents', path: '/supplier-portal/documents', icon: '▤' },
-        { label: 'Negotiation requests', path: '/supplier-portal/negotiations', icon: '↔' },
-        { label: 'Notifications', path: '/notifications', icon: '◉' },
-      ];
+    const items = [{ label: 'Overview', path: '/dashboard', icon: '⌂' }];
+    const supplierUser = roles.includes('SUPPLIER_USER');
+    if (supplierUser) {
+      items.push({ label: 'Invited RFQs & quotations', path: '/supplier-portal/quotations', icon: '▧' });
+      items.push({ label: 'Company documents', path: '/supplier-portal/documents', icon: '▤' });
+      items.push({ label: 'Negotiation requests', path: '/supplier-portal/negotiations', icon: '↔' });
     }
-    const items = [
-      { label: 'Overview', path: '/dashboard', icon: '⌂' },
-      { label: 'Suppliers', path: '/suppliers', icon: '▤' },
-      { label: 'RFQ Management', path: '/rfqs', icon: '◎' },
-      { label: 'Quotations', path: '/quotations', icon: '▧' },
-      { label: 'Evaluations', path: '/evaluations', icon: '◇' },
-      { label: 'Negotiations', path: '/negotiations', icon: '↔' },
-    ];
-    items.push({ label: 'Notifications', path: '/notifications', icon: '◉' });
+
+    const supplierRead = roles.some((role) => [
+      'SUPPLIER_VERIFIER', 'PROCUREMENT_BUYER', 'SRM_ADMIN', 'SUPER_ADMIN', 'AUDITOR',
+    ].includes(role));
+    if (supplierRead) items.push({ label: 'Suppliers', path: '/suppliers', icon: '▤' });
+
+    const rfqRead = roles.some((role) => [
+      'PROCUREMENT_BUYER', 'SUPPLIER_VERIFIER', 'SRM_ADMIN', 'SUPER_ADMIN', 'AUDITOR',
+    ].includes(role));
+    if (rfqRead) items.push({ label: 'RFQ Management', path: '/rfqs', icon: '◎' });
+
+    if (roles.includes('PROCUREMENT_BUYER')) {
+      items.push({ label: 'Quotations', path: '/quotations', icon: '▧' });
+      items.push({ label: 'Evaluations', path: '/evaluations', icon: '◇' });
+      items.push({ label: 'Negotiations', path: '/negotiations', icon: '↔' });
+    }
     if (roles.includes('PROCUREMENT_APPROVER')) {
       items.push({ label: 'Approvals', path: '/approvals', icon: '✓' });
     }
-    if (roles.some((role) => ['AUDITOR', 'SRM_ADMIN', 'SUPER_ADMIN', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER'].includes(role))) {
+
+    if (roles.length > 0) items.push({ label: 'Notifications', path: '/notifications', icon: '◉' });
+    if (roles.some((role) => [
+      'AUDITOR', 'SRM_ADMIN', 'SUPER_ADMIN', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER',
+    ].includes(role))) {
       items.push({ label: 'Audit trail', path: '/audit', icon: '≋' });
     }
     if (roles.some((role) => ['SRM_ADMIN', 'SUPER_ADMIN'].includes(role))) {
@@ -44,7 +53,7 @@ export class App {
     if (roles.includes('SUPER_ADMIN')) {
       items.push({ label: 'User administration', path: '/admin/users', icon: '♙' });
     }
-    items.push({ label: 'Reports', path: '/reports', icon: '▥' });
+    if (roles.length > 0) items.push({ label: 'Reports', path: '/reports', icon: '▥' });
     return items;
   }
 
