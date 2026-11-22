@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,9 +36,8 @@ class JwtAuthenticationFilterTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwt, jdbc);
         when(jwt.extractUserId(TOKEN)).thenReturn(USER_ID);
-        when(jwt.extractRoles(TOKEN)).thenReturn(List.of("PROCUREMENT_BUYER"));
         when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any(), eq(USER_ID)))
-                .thenReturn(List.of("ACTIVE"));
+                .thenReturn(List.of("PROCUREMENT_BUYER"));
         MockHttpServletRequest request = requestWithToken();
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = (req, res) -> {};
@@ -47,6 +47,27 @@ class JwtAuthenticationFilterTest {
         assertEquals(USER_ID.toString(), SecurityContextHolder.getContext().getAuthentication().getName());
         assertEquals("ROLE_PROCUREMENT_BUYER",
                 SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority());
+        verify(jdbc).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any(), eq(USER_ID));
+    }
+
+    @Test
+    void usesCurrentDatabaseRolesInsteadOfStaleTokenRoles() throws Exception {
+        JwtService jwt = mock(JwtService.class);
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwt, jdbc);
+        when(jwt.extractUserId(TOKEN)).thenReturn(USER_ID);
+        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any(), eq(USER_ID)))
+                .thenReturn(List.of("AUDITOR"));
+        MockHttpServletRequest request = requestWithToken();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = (req, res) -> {};
+
+        filter.doFilterInternal(request, response, chain);
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertEquals("ROLE_AUDITOR",
+                authentication.getAuthorities().iterator().next().getAuthority());
+        verify(jwt, never()).extractRoles(TOKEN);
         verify(jdbc).query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<String>>any(), eq(USER_ID));
     }
 
