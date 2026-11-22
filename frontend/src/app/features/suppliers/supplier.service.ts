@@ -23,6 +23,11 @@ export class SupplierService {
     return this.http.get<ApiResponse<Supplier[]>>(`${API_BASE_URL}/suppliers`);
   }
 
+  getSuppliersPage(page: number, size: number, q = '', status = ''): Observable<ApiResponse<import('./supplier.models').PageData<Supplier>>> {
+    const params = new URLSearchParams({ page: String(page), size: String(size), q, status });
+    return this.http.get<ApiResponse<import('./supplier.models').PageData<Supplier>>>(`${API_BASE_URL}/suppliers/page?${params}`);
+  }
+
   getMySupplierProfiles(): Observable<ApiResponse<Supplier[]>> {
     return this.http.get<ApiResponse<Supplier[]>>(`${API_BASE_URL}/supplier/profiles`);
   }
