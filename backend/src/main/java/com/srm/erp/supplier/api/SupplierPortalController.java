@@ -2,9 +2,12 @@ package com.srm.erp.supplier.api;
 
 import com.srm.erp.platform.response.ApiResponse;
 import com.srm.erp.supplier.service.SupplierService;
+import com.srm.erp.supplier.service.SupplierLifecycleService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,9 +19,18 @@ import java.util.UUID;
 @PreAuthorize("hasRole('SUPPLIER_USER')")
 public class SupplierPortalController {
     private final SupplierService suppliers;
+    private final SupplierLifecycleService lifecycle;
 
-    public SupplierPortalController(SupplierService suppliers) {
+    public SupplierPortalController(SupplierService suppliers, SupplierLifecycleService lifecycle) {
         this.suppliers = suppliers;
+        this.lifecycle = lifecycle;
+    }
+
+    @PostMapping("/profiles/{supplierId}/submit")
+    public ApiResponse<SupplierLifecycleService.LifecycleResult> submitMyProfile(@PathVariable UUID supplierId) {
+        UUID actorId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+        return ApiResponse.success("Supplier profile submitted for verification",
+                lifecycle.submitForSupplierUser(supplierId, actorId));
     }
 
     @GetMapping("/profiles")
