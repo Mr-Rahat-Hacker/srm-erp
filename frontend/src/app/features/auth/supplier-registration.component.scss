@@ -1,0 +1,24 @@
+:host { display:block; color:#1d2d42; }
+.registration-wrap { display:grid; place-items:center; padding:24px; }
+.registration-card { width:min(100%,620px); display:grid; gap:15px; padding:28px; border:1px solid #e4eaf0; border-radius:14px; background:#fff; box-shadow:0 14px 40px #20354a0d; }
+.eyebrow { margin:0; color:#8392a2; font-size:9px; font-weight:800; letter-spacing:.13em; }
+h1 { margin:0; color:#1b2c40; font-size:27px; }
+h2 { margin:8px 0 0; padding-top:13px; border-top:1px solid #edf1f5; color:#30465e; font-size:13px; }
+.intro { margin:-8px 0 2px; color:#77879a; font-size:12px; line-height:1.6; }
+form { display:grid; gap:11px; }
+label { display:grid; gap:6px; color:#4d6075; font-size:11px; font-weight:700; }
+label span { color:#b54b46; }
+input { box-sizing:border-box; width:100%; min-height:39px; padding:9px 11px; border:1px solid #dce4ec; border-radius:7px; font:inherit; font-size:12px; }
+label small { color:#8795a5; font-size:9px; font-weight:500; }
+.two-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+details { display:grid; gap:10px; color:#315c80; font-size:11px; }
+summary { cursor:pointer; font-weight:750; }
+details label { margin-top:10px; }
+button { min-height:43px; border:0; border-radius:7px; background:#183b5d; color:white; font-weight:750; cursor:pointer; }
+button:disabled { opacity:.55; cursor:not-allowed; }
+.notice { padding:11px; border-radius:7px; font-size:11px; line-height:1.5; }
+.notice.error { background:#fff1f0; color:#a13d36; }
+.notice.success { background:#edf8f1; color:#267447; }
+.login-link { margin:0; color:#77879a; font-size:10px; text-align:center; }
+a { color:#315c80; font-weight:700; }
+@media(max-width:520px) { .registration-card { padding:20px; } .two-columns { grid-template-columns:1fr; } }
