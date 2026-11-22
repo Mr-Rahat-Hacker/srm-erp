@@ -17,6 +17,6 @@ describe('App', () => {
 
     expect(fixture.componentInstance).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('SRM Platform');
-    expect(fixture.nativeElement.textContent).toContain('Suppliers');
+    expect(fixture.nativeElement.textContent).toContain('Overview');
   });
 });
