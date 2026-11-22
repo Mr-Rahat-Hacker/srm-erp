@@ -2,7 +2,7 @@
   <div>
     <span class="eyebrow">PLATFORM GOVERNANCE</span>
     <h1>User administration</h1>
-    <p>Provision internal access and manage account status. Role changes and status updates are audited.</p>
+    <p>Provision internal access and manage account status. Role assignments and status changes are audited.</p>
   </div>
 </div>
 
@@ -25,11 +25,7 @@
     </div>
     <fieldset>
       <legend>Assign roles</legend>
-      <label class="role-option">
-        <input type="checkbox" [checked]="form.roles.includes('SRM_ADMIN')" (change)="toggleRole('SRM_ADMIN', $any($event.target).checked)">
-        SRM Admin
-      </label>
-      @for (role of roles.slice(1); track role) {
+      @for (role of roles; track role) {
         <label class="role-option">
           <input type="checkbox" [checked]="form.roles.includes(role)" (change)="toggleRole(role, $any($event.target).checked)">
           {{ role.replaceAll('_', ' ') }}
