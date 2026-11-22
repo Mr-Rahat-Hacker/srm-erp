@@ -20,6 +20,16 @@
     </select>
   </label>
 }
+@if (selectedProfile; as profile) {
+  <section class="profile-status">
+    <div><span>Profile status</span><strong>{{ profile.lifecycleStatus }}</strong></div>
+    @if (profile.lifecycleStatus === 'DRAFT' || profile.lifecycleStatus === 'CORRECTION_REQUIRED') {
+      <button type="button" [disabled]="submitting" (click)="submitProfile()">
+        {{ submitting ? 'Submitting…' : 'Submit profile for verification' }}
+      </button>
+    }
+  </section>
+}
 @if (selectedSupplierId) {
   <app-supplier-documents [supplierId]="selectedSupplierId" />
 }

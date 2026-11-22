@@ -63,6 +63,39 @@ class SupplierLifecycleServiceTest {
     }
 
     @Test
+    void supplierUserCanSubmitOwnDraftAndAuditCorrectActorType() {
+        when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(SUPPLIER_ID), eq(ACTOR_ID)))
+                .thenReturn(true);
+        givenStatus("DRAFT");
+        doAnswer(invocation -> {
+            Object[] arguments = invocation.getArguments();
+            updateArguments.add(Arrays.copyOfRange(arguments, 1, arguments.length));
+            return 1;
+        }).when(jdbc).update(anyString(), any(Object[].class));
+
+        var result = service.submitForSupplierUser(SUPPLIER_ID, ACTOR_ID);
+
+        assertEquals("SUBMITTED", result.currentStatus());
+        assertEquals("SUPPLIER_SUBMITTED", result.action());
+        assertEquals("SUPPLIER_USER", updateArguments.get(2)[1]);
+        verify(jdbc).queryForObject(anyString(), eq(Boolean.class), eq(SUPPLIER_ID), eq(ACTOR_ID));
+    }
+
+    @Test
+    void supplierUserCannotSubmitAnotherOrganizationsProfile() {
+        when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(SUPPLIER_ID), eq(ACTOR_ID)))
+                .thenReturn(false);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> service.submitForSupplierUser(SUPPLIER_ID, ACTOR_ID));
+
+        assertEquals(404, exception.getStatusCode().value());
+        verify(jdbc).queryForObject(anyString(), eq(Boolean.class), eq(SUPPLIER_ID), eq(ACTOR_ID));
+        verify(jdbc, never()).query(eq(STATUS_QUERY), ArgumentMatchers.<RowMapper<String>>any(), eq(SUPPLIER_ID));
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
     void startReviewRejectsSuppliersThatWereNotSubmitted() {
         givenStatus("DRAFT");
 

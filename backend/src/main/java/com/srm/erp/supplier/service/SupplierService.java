@@ -2,25 +2,31 @@ package com.srm.erp.supplier.service;
 
 import com.srm.erp.supplier.api.SupplierRegistrationRequest;
 import com.srm.erp.supplier.api.SupplierResponse;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 
 @Service
 public class SupplierService {
     private final JdbcTemplate jdbc;
+    private final PasswordEncoder passwordEncoder;
 
-    public SupplierService(JdbcTemplate jdbc) {
+    public SupplierService(JdbcTemplate jdbc, PasswordEncoder passwordEncoder) {
         this.jdbc = jdbc;
+        this.passwordEncoder = passwordEncoder;
     }
 
     private final RowMapper<SupplierResponse> supplierMapper = this::mapSupplier;
@@ -63,6 +69,56 @@ public class SupplierService {
         }
 
         return findByIdPublic(supplierId);
+    }
+
+    @Transactional
+    public SupplierResponse registerSelf(SupplierRegistrationRequest request) {
+        String password = request.password();
+        if (password == null || password.length() < 12
+                || password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "Password must be at least 12 characters and no more than 72 UTF-8 bytes");
+        }
+        String email = request.email().trim().toLowerCase(java.util.Locale.ROOT);
+        Boolean emailExists = jdbc.queryForObject("""
+                SELECT EXISTS (SELECT 1 FROM srm.app_user WHERE lower(email) = ?)
+                """, Boolean.class, email);
+        if (Boolean.TRUE.equals(emailExists)) {
+            throw new ResponseStatusException(CONFLICT, "An account with this email already exists");
+        }
+
+        SupplierResponse supplier = register(request);
+        UUID userId;
+        try {
+            userId = jdbc.queryForObject("""
+                    INSERT INTO srm.app_user (email, password_hash, full_name, account_status)
+                    VALUES (?, ?, ?, 'ACTIVE')
+                    RETURNING user_id
+                    """, UUID.class, email, passwordEncoder.encode(password), request.contactName().trim());
+        } catch (DuplicateKeyException exception) {
+            throw new ResponseStatusException(CONFLICT, "An account with this email already exists");
+        }
+        UUID roleId = jdbc.queryForObject(
+                "SELECT role_id FROM srm.role WHERE role_code = 'SUPPLIER_USER'", UUID.class);
+        jdbc.update("INSERT INTO srm.user_role (user_id, role_id, assigned_by) VALUES (?, ?, ?)",
+                userId, roleId, userId);
+        jdbc.update("""
+                INSERT INTO srm.supplier_user_membership (supplier_id, user_id, membership_status)
+                VALUES (?, ?, 'ACTIVE')
+                """, supplier.supplierId(), userId);
+        jdbc.update("""
+                INSERT INTO srm.supplier_status_history
+                    (supplier_id, old_status, new_status, changed_by, reason)
+                VALUES (?, NULL, 'DRAFT', ?, 'Self-registration')
+                """, supplier.supplierId(), userId);
+        jdbc.update("""
+                INSERT INTO srm.audit_event
+                    (actor_user_id, actor_type, action_code, entity_type, entity_id, supplier_id,
+                     outcome, changed_fields)
+                VALUES (?, 'SUPPLIER_USER', 'SUPPLIER_SELF_REGISTERED', 'SUPPLIER', ?, ?, 'SUCCESS',
+                        jsonb_build_object('lifecycle_status', 'DRAFT', 'account_status', 'ACTIVE'))
+                """, userId, supplier.supplierId(), supplier.supplierId());
+        return supplier;
     }
 
     public List<SupplierResponse> findAll() {

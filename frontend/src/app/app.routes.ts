@@ -13,10 +13,12 @@ import { AuditComponent } from './features/audit/audit.component';
 import { NotificationsComponent } from './features/notifications/notifications.component';
 import { ReportsComponent } from './features/reports/reports.component';
 import { LoginComponent } from './features/auth/login.component';
+import { SupplierRegistrationComponent } from './features/auth/supplier-registration.component';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: SupplierRegistrationComponent },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'suppliers', component: SuppliersComponent, canActivate: [authGuard] },
