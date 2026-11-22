@@ -2,47 +2,72 @@
   <div>
     <span class="eyebrow">OVERVIEW</span>
     <h1>Workspace overview</h1>
-    <p>Build and manage supplier relationships through one controlled workflow.</p>
+    <p>Current supplier, sourcing and approval activity available to your account.</p>
   </div>
   <span class="release-chip">FIRST RELEASE · SRM</span>
 </div>
 
-<section class="welcome-panel">
-  <div class="welcome-copy">
-    <span class="panel-kicker">SUPPLIER RELATIONSHIP MANAGEMENT</span>
-    <h2>Your SRM workspace is taking shape.</h2>
-    <p>The application foundation is in place. Supplier onboarding is the first business module scheduled for implementation.</p>
-    <a routerLink="/suppliers" class="primary-link">Open supplier management <span aria-hidden="true">→</span></a>
-  </div>
-  <div class="welcome-symbol" aria-hidden="true">SRM</div>
-</section>
-
-<section class="section-block">
-  <div class="section-heading">
-    <div>
-      <h2>Development milestones</h2>
-      <p>Implementation progress for the first SRM release</p>
+@if (error) { <div class="notice error" role="alert">{{ error }}</div> }
+@if (loading) {
+  <section class="empty-state" role="status">Loading your workspace…</section>
+} @else if (dashboard; as data) {
+  <section class="welcome-panel">
+    <div class="welcome-copy">
+      <span class="panel-kicker">{{ data.audience === 'SUPPLIER' ? 'SUPPLIER WORKSPACE' : 'PROCUREMENT WORKSPACE' }}</span>
+      <h2>{{ data.audience === 'SUPPLIER' ? 'Your supplier activity' : 'Move sourcing work forward' }}</h2>
+      <p>{{ data.audience === 'SUPPLIER'
+        ? 'Review invitations, track submitted quotations, and respond to negotiation requests.'
+        : 'Follow live workflow totals and open the work queues available to your role.' }}</p>
+      @if (actions.length > 0) {
+        <a [routerLink]="actions[0].path" class="primary-link">{{ actions[0].label }} <span aria-hidden="true">→</span></a>
+      }
     </div>
-    <span class="milestone-count">1 of 4 foundation milestones</span>
-  </div>
+    <div class="welcome-symbol" aria-hidden="true">SRM</div>
+  </section>
 
-  <div class="milestone-list">
-    @for (milestone of milestones; track milestone.name) {
-      <article class="milestone-row">
-        <span class="milestone-check" [class.complete]="milestone.complete">
-          {{ milestone.complete ? '✓' : '○' }}
-        </span>
-        <div>
-          <strong>{{ milestone.name }}</strong>
-          <p>{{ milestone.detail }}</p>
-        </div>
-        <span class="milestone-status" [class.complete-text]="milestone.complete">
-          {{ milestone.complete ? 'Foundation ready' : 'Upcoming' }}
-        </span>
-      </article>
+  <section class="metrics" aria-label="Live SRM workflow metrics">
+    <article><span>Supplier invitations</span><strong>{{ data.supplierInvitations | number }}</strong></article>
+    <article><span>Active RFQs</span><strong>{{ data.activeRfqs | number }}</strong></article>
+    <article><span>Submitted quotations</span><strong>{{ data.submittedQuotations | number }}</strong></article>
+    <article><span>Open negotiations</span><strong>{{ data.openNegotiations | number }}</strong></article>
+    @if (data.audience === 'INTERNAL') {
+      <article><span>Pending approvals</span><strong>{{ data.pendingApprovals | number }}</strong></article>
     }
-  </div>
-</section>
+    <article><span>Recorded awards</span><strong>{{ data.awards | number }}</strong></article>
+  </section>
+
+  @if (actions.length > 0) {
+    <section class="section-block">
+      <div class="section-heading"><div><h2>Work queues</h2><p>Open the modules available to your role</p></div></div>
+      <div class="action-grid">
+        @for (action of actions; track action.path) {
+          <a [routerLink]="action.path" class="action-card">{{ action.label }} <span aria-hidden="true">→</span></a>
+        }
+      </div>
+    </section>
+  }
+
+  @if (statuses(data.supplierStatuses).length > 0 || statuses(data.rfqStatuses).length > 0) {
+    <section class="status-grid">
+      @if (statuses(data.supplierStatuses).length > 0) {
+        <article class="status-card">
+          <h2>Supplier onboarding</h2>
+          @for (item of statuses(data.supplierStatuses); track item.label) {
+            <div class="status-row"><span>{{ item.label.replaceAll('_', ' ') }}</span><strong>{{ item.value | number }}</strong></div>
+          }
+        </article>
+      }
+      @if (statuses(data.rfqStatuses).length > 0) {
+        <article class="status-card">
+          <h2>RFQ lifecycle</h2>
+          @for (item of statuses(data.rfqStatuses); track item.label) {
+            <div class="status-row"><span>{{ item.label.replaceAll('_', ' ') }}</span><strong>{{ item.value | number }}</strong></div>
+          }
+        </article>
+      }
+    </section>
+  }
+}
 
 <section class="boundary-note">
   <strong>Designed to complement SAP</strong>
