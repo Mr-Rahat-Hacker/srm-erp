@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,9 +19,11 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
+    private final JdbcTemplate jdbc;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, JdbcTemplate jdbc) {
         this.jwtService = jwtService;
+        this.jdbc = jdbc;
     }
 
     @Override
@@ -31,10 +34,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String token = header.substring(7);
                 var userId = jwtService.extractUserId(token);
-                List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(token).stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList();
-                var authentication = new UsernamePasswordAuthenticationToken(userId.toString(), null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                List<String> activeUsers = jdbc.query("""
+                        SELECT account_status FROM srm.app_user
+                        WHERE user_id = ? AND account_status = 'ACTIVE'
+                        """, (rs, row) -> rs.getString(1), userId);
+                if (activeUsers.isEmpty()) {
+                    SecurityContextHolder.clearContext();
+                } else {
+                    List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(token).stream()
+                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList();
+                    var authentication = new UsernamePasswordAuthenticationToken(
+                            userId.toString(), null, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             } catch (JwtException | IllegalArgumentException ex) {
                 SecurityContextHolder.clearContext();
             }
