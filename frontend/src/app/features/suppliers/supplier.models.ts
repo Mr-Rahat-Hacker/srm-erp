@@ -13,6 +13,10 @@ export interface SupplierRegistration {
   countryCode: string;
 }
 
+export interface SupplierAccountRegistration extends SupplierRegistration {
+  password: string;
+}
+
 export interface Supplier {
   supplierId: string;
   supplierNumber: string;
