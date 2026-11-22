@@ -19,24 +19,25 @@ import { ApprovalPoliciesComponent } from './features/approvals/approval-policie
 import { authGuard } from './core/auth/auth.guard';
 import { superAdminGuard } from './core/auth/super-admin.guard';
 import { approvalPolicyGuard } from './core/auth/approval-policy.guard';
+import { roleGuard } from './core/auth/role.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: SupplierRegistrationComponent },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
-  { path: 'suppliers', component: SuppliersComponent, canActivate: [authGuard] },
-  { path: 'rfqs', component: RfqsComponent, canActivate: [authGuard] },
-  { path: 'supplier-portal/quotations', component: SupplierQuotationsComponent, canActivate: [authGuard] },
-  { path: 'supplier-portal/negotiations', component: SupplierNegotiationsComponent, canActivate: [authGuard] },
-  { path: 'supplier-portal/documents', component: SupplierDocumentsPortalComponent, canActivate: [authGuard] },
-  { path: 'quotations', component: QuotationComparisonComponent, canActivate: [authGuard] },
-  { path: 'negotiations', component: BuyerNegotiationsComponent, canActivate: [authGuard] },
-  { path: 'evaluations', component: EvaluationsComponent, canActivate: [authGuard] },
-  { path: 'approvals', component: ApprovalsComponent, canActivate: [authGuard] },
-  { path: 'audit', component: AuditComponent, canActivate: [authGuard] },
-  { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
-  { path: 'reports', component: ReportsComponent, canActivate: [authGuard] },
+  { path: 'suppliers', component: SuppliersComponent, canActivate: [authGuard, roleGuard], data: { roles: ['SUPPLIER_VERIFIER', 'PROCUREMENT_BUYER', 'SRM_ADMIN', 'SUPER_ADMIN', 'AUDITOR'] } },
+  { path: 'rfqs', component: RfqsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['PROCUREMENT_BUYER', 'SUPPLIER_VERIFIER', 'SRM_ADMIN', 'SUPER_ADMIN', 'AUDITOR'] } },
+  { path: 'supplier-portal/quotations', component: SupplierQuotationsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['SUPPLIER_USER'] } },
+  { path: 'supplier-portal/negotiations', component: SupplierNegotiationsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['SUPPLIER_USER'] } },
+  { path: 'supplier-portal/documents', component: SupplierDocumentsPortalComponent, canActivate: [authGuard, roleGuard], data: { roles: ['SUPPLIER_USER'] } },
+  { path: 'quotations', component: QuotationComparisonComponent, canActivate: [authGuard, roleGuard], data: { roles: ['PROCUREMENT_BUYER'] } },
+  { path: 'negotiations', component: BuyerNegotiationsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['PROCUREMENT_BUYER'] } },
+  { path: 'evaluations', component: EvaluationsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['PROCUREMENT_BUYER'] } },
+  { path: 'approvals', component: ApprovalsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['PROCUREMENT_APPROVER'] } },
+  { path: 'audit', component: AuditComponent, canActivate: [authGuard, roleGuard], data: { roles: ['AUDITOR', 'SRM_ADMIN', 'SUPER_ADMIN', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER'] } },
+  { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['SUPPLIER_USER', 'SUPPLIER_VERIFIER', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER', 'SRM_ADMIN', 'SUPER_ADMIN', 'AUDITOR'] } },
+  { path: 'reports', component: ReportsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['SUPPLIER_USER', 'SUPPLIER_VERIFIER', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER', 'SRM_ADMIN', 'SUPER_ADMIN', 'AUDITOR'] } },
   { path: 'admin/approval-policies', component: ApprovalPoliciesComponent, canActivate: [authGuard, approvalPolicyGuard] },
   { path: 'admin/users', component: AdminUsersComponent, canActivate: [authGuard, superAdminGuard] },
   { path: '**', redirectTo: 'dashboard' },
