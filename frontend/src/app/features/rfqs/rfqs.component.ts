@@ -6,6 +6,7 @@ import { SupplierService } from '../suppliers/supplier.service';
 import { Supplier } from '../suppliers/supplier.models';
 import { Rfq, RfqCreatePayload, RfqLineDraft, RfqSummary } from './rfq.models';
 import { RfqService } from './rfq.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-rfqs',
@@ -16,6 +17,11 @@ import { RfqService } from './rfq.service';
 export class RfqsComponent implements OnInit {
   private readonly rfqService = inject(RfqService);
   private readonly supplierService = inject(SupplierService);
+  private readonly auth = inject(AuthService);
+
+  protected get canManageRfqs(): boolean {
+    return (this.auth.getUser()?.roles ?? []).includes('PROCUREMENT_BUYER');
+  }
 
   protected rfqs: RfqSummary[] = [];
   protected suppliers: Supplier[] = [];
