@@ -4,6 +4,7 @@ import { Component, Input, OnChanges, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SupplierDocument } from './supplier.models';
 import { SupplierService } from './supplier.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-supplier-documents',
@@ -15,6 +16,20 @@ export class SupplierDocumentsComponent implements OnChanges {
   @Input({ required: true }) supplierId = '';
 
   private readonly supplierService = inject(SupplierService);
+  private readonly auth = inject(AuthService);
+
+  protected get canUploadDocuments(): boolean {
+    return this.hasAnyRole('SRM_ADMIN', 'SUPER_ADMIN');
+  }
+
+  protected get canReviewDocuments(): boolean {
+    return this.hasAnyRole('SUPPLIER_VERIFIER', 'SRM_ADMIN');
+  }
+
+  private hasAnyRole(...roles: string[]): boolean {
+    const currentRoles = this.auth.getUser()?.roles ?? [];
+    return roles.some((role) => currentRoles.includes(role));
+  }
 
   protected readonly documentTypes = [
     { value: 'GST_CERTIFICATE', label: 'GST certificate' },
