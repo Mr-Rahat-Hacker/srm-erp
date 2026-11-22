@@ -12,6 +12,7 @@ import {
   SupplierRegistration,
 } from './supplier.models';
 import { SupplierDocumentsComponent } from './supplier-documents.component';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-suppliers',
@@ -21,6 +22,28 @@ import { SupplierDocumentsComponent } from './supplier-documents.component';
 })
 export class SuppliersComponent implements OnInit {
   private readonly supplierService = inject(SupplierService);
+  private readonly auth = inject(AuthService);
+
+  protected get canRegisterSupplier(): boolean {
+    return this.hasAnyRole('SUPPLIER_VERIFIER', 'SRM_ADMIN', 'SUPER_ADMIN');
+  }
+
+  protected get canSubmitSupplier(): boolean {
+    return this.hasAnyRole('SRM_ADMIN');
+  }
+
+  protected get canReviewSupplier(): boolean {
+    return this.hasAnyRole('SUPPLIER_VERIFIER', 'SRM_ADMIN');
+  }
+
+  protected get canManageSapMappings(): boolean {
+    return this.hasAnyRole('SUPPLIER_VERIFIER', 'SRM_ADMIN');
+  }
+
+  private hasAnyRole(...roles: string[]): boolean {
+    const currentRoles = this.auth.getUser()?.roles ?? [];
+    return roles.some((role) => currentRoles.includes(role));
+  }
 
   protected suppliers: Supplier[] = [];
   protected loading = false;

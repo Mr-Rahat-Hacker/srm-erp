@@ -6,9 +6,11 @@
   </div>
   <div class="heading-actions">
     <button class="secondary-button" type="button" (click)="loadSuppliers()" [disabled]="loading">Refresh</button>
-    <button class="primary-button" type="button" (click)="showForm = !showForm">
-      {{ showForm ? 'Close form' : '+ Register supplier' }}
-    </button>
+    @if (canRegisterSupplier) {
+      <button class="primary-button" type="button" (click)="showForm = !showForm">
+        {{ showForm ? 'Close form' : '+ Register supplier' }}
+      </button>
+    }
   </div>
 </div>
 
@@ -19,7 +21,7 @@
   <div class="notice error" role="alert">{{ errorMessage }}</div>
 }
 
-@if (showForm) {
+@if (showForm && canRegisterSupplier) {
   <section class="form-card">
     <div class="card-heading">
       <div>
@@ -121,18 +123,18 @@
           <h3>Qualification workflow</h3>
           <p>Current state: <strong>{{ supplier.lifecycleStatus }}</strong></p>
         </div>
-        @if (supplier.lifecycleStatus === 'DRAFT' || supplier.lifecycleStatus === 'CORRECTION_REQUIRED') {
+        @if ((supplier.lifecycleStatus === 'DRAFT' || supplier.lifecycleStatus === 'CORRECTION_REQUIRED') && canSubmitSupplier) {
           <button class="primary-button" type="button" (click)="submitForReview()" [disabled]="lifecycleBusy">
             {{ lifecycleBusy ? 'Updating…' : 'Submit for review' }}
           </button>
-        } @else if (supplier.lifecycleStatus === 'SUBMITTED') {
+        } @else if (supplier.lifecycleStatus === 'SUBMITTED' && canReviewSupplier) {
           <button class="primary-button" type="button" (click)="startSupplierReview()" [disabled]="lifecycleBusy">
             {{ lifecycleBusy ? 'Updating…' : 'Start review' }}
           </button>
         }
       </div>
 
-      @if (supplier.lifecycleStatus === 'UNDER_REVIEW') {
+      @if (supplier.lifecycleStatus === 'UNDER_REVIEW' && canReviewSupplier) {
         <label class="lifecycle-remarks">Reviewer remarks
           <span>Required to return for correction or reject</span>
           <textarea name="lifecycleRemarks" [(ngModel)]="lifecycleRemarks" maxlength="2000" rows="2"
@@ -147,7 +149,7 @@
           <button class="danger-button" type="button" (click)="decideSupplier('REJECT')"
             [disabled]="lifecycleBusy || !lifecycleRemarks.trim()">Reject supplier</button>
         </div>
-      } @else {
+      } @else if (supplier.lifecycleStatus !== 'UNDER_REVIEW') {
         <p class="lifecycle-help">Only an authorized verifier or administrator can advance this state. Supplier qualification does not create an SAP vendor.</p>
       }
     </section>
@@ -178,7 +180,7 @@
                   <td class="supplier-number">{{ mapping.sapVendorCode }}</td>
                   <td><span class="status-pill">{{ mapping.active ? 'ACTIVE' : 'INACTIVE' }}</span></td>
                   <td>
-                    @if (mapping.active && supplier.lifecycleStatus === 'APPROVED') {
+                    @if (mapping.active && supplier.lifecycleStatus === 'APPROVED' && canManageSapMappings) {
                       <button class="text-button" type="button" (click)="deactivateSapMapping(mapping)"
                         [disabled]="mappingSaving || !mappingDeactivateReason.trim()">Deactivate</button>
                     }
@@ -190,7 +192,7 @@
         </div>
       }
 
-      @if (supplier.lifecycleStatus === 'APPROVED') {
+      @if (supplier.lifecycleStatus === 'APPROVED' && canManageSapMappings) {
         <div class="mapping-editor">
           <h4>Add or update mapping</h4>
           <div class="form-grid">
@@ -239,7 +241,9 @@
     <div class="empty-state">
       <strong>No suppliers registered yet</strong>
       <p>Start by registering your first supplier organization.</p>
-      <button class="secondary-button" type="button" (click)="showForm = true">Register first supplier</button>
+      @if (canRegisterSupplier) {
+        <button class="secondary-button" type="button" (click)="showForm = true">Register first supplier</button>
+      }
     </div>
   } @else {
     <div class="table-wrap">

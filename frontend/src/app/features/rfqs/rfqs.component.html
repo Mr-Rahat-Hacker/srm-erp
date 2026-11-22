@@ -6,16 +6,18 @@
   </div>
   <div class="heading-actions">
     <button class="secondary-button" type="button" (click)="loadRfqs()" [disabled]="loading">Refresh</button>
-    <button class="primary-button" type="button" (click)="showCreateForm = !showCreateForm">
-      {{ showCreateForm ? 'Close form' : '+ Create RFQ' }}
-    </button>
+    @if (canManageRfqs) {
+      <button class="primary-button" type="button" (click)="showCreateForm = !showCreateForm">
+        {{ showCreateForm ? 'Close form' : '+ Create RFQ' }}
+      </button>
+    }
   </div>
 </div>
 
 @if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
 @if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
 
-@if (showCreateForm) {
+@if (showCreateForm && canManageRfqs) {
   <section class="form-card">
     <div class="card-heading">
       <div><h2>New request for quotation</h2><p>Create a draft, add qualified suppliers, then publish it.</p></div>
@@ -113,7 +115,7 @@
     @if (loading) {
       <p class="empty-state">Loading RFQs…</p>
     } @else if (rfqs.length === 0) {
-      <div class="empty-state">No RFQs yet. Create a draft to begin.</div>
+      <div class="empty-state">{{ canManageRfqs ? 'No RFQs yet. Create a draft to begin.' : 'No RFQs are available in your authorized scope.' }}</div>
     } @else {
       <div class="table-wrap">
         <table>
@@ -160,7 +162,7 @@
         </table>
       </div>
 
-      @if (rfq.status === 'DRAFT') {
+      @if (rfq.status === 'DRAFT' && canManageRfqs) {
         <div class="invite-panel">
           <h3>Invite approved suppliers</h3>
           @if (supplierLoading) {
