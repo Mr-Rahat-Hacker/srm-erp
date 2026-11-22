@@ -46,6 +46,12 @@ export class SuppliersComponent implements OnInit {
   }
 
   protected suppliers: Supplier[] = [];
+  protected page = 0;
+  protected pageSize = 25;
+  protected totalElements = 0;
+  protected totalPages = 0;
+  protected searchText = '';
+  protected statusFilter = '';
   protected loading = false;
   protected saving = false;
   protected detailsLoading = false;
@@ -70,9 +76,11 @@ export class SuppliersComponent implements OnInit {
   protected loadSuppliers(): void {
     this.loading = true;
     this.errorMessage = '';
-    this.supplierService.getSuppliers().subscribe({
+    this.supplierService.getSuppliersPage(this.page, this.pageSize, this.searchText, this.statusFilter).subscribe({
       next: (response) => {
-        this.suppliers = response.data ?? [];
+        this.suppliers = response.data?.items ?? [];
+        this.totalElements = response.data?.totalElements ?? 0;
+        this.totalPages = response.data?.totalPages ?? 0;
         this.loading = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -84,6 +92,18 @@ export class SuppliersComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  protected applySupplierFilters(): void {
+    this.page = 0;
+    this.loadSuppliers();
+  }
+
+  protected changeSupplierPage(delta: number): void {
+    const next = this.page + delta;
+    if (next < 0 || next >= this.totalPages) return;
+    this.page = next;
+    this.loadSuppliers();
   }
 
   protected viewDetails(supplier: Supplier): void {
