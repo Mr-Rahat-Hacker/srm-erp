@@ -126,8 +126,10 @@
                   </select>
                 </label>
                 <button type="button"
-                  [disabled]="!selectedApproverToAdd[recommendation.recommendationId]"
+                  [disabled]="!selectedApproverToAdd[recommendation.recommendationId]
+                    || stageApproversFor(recommendation.recommendationId).length >= 10"
                   (click)="addApprovalStage(recommendation.recommendationId)">Add stage</button>
+                <small>Stages run in order. You can set up to 10 distinct approvers.</small>
                 @if (stageApproversFor(recommendation.recommendationId).length > 0) {
                   <ol class="approval-stages">
                     @for (approverId of stageApproversFor(recommendation.recommendationId); track approverId; let stageIndex = $index) {
