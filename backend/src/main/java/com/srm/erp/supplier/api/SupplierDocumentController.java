@@ -58,7 +58,7 @@ public class SupplierDocumentController {
     }
 
     @GetMapping("/{documentId}/content")
-    @PreAuthorize("hasAnyRole('SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
+    @PreAuthorize("hasAnyRole('SUPPLIER_USER','SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
     public ResponseEntity<FileSystemResource> download(@PathVariable UUID supplierId,
                                                         @PathVariable UUID documentId) {
         var file = isSupplierUser()
