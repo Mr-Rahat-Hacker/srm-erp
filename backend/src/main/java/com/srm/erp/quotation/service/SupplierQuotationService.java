@@ -229,6 +229,17 @@ public class SupplierQuotationService {
                         jsonb_build_object('version_number', ?, 'reason', ?))
                 """, userId, quotation.quotationId(), access.supplierId(), rfqId, quotation.quotationId(),
                 submitted.versionNumber(), request.reason().trim());
+        jdbc.update("""
+                INSERT INTO srm.notification
+                    (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                SELECT r.buyer_user_id, 'QUOTATION_WITHDRAWN', channels.channel, 'QUEUED',
+                       'Quotation withdrawn for RFQ ' || r.rfq_number,
+                       'An invited supplier withdrew its submitted quotation. Review the RFQ quotation status.',
+                       '/evaluations'
+                FROM srm.rfq r
+                CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                WHERE r.rfq_id = ?
+                """, rfqId);
         return response(access, userId);
     }
 
