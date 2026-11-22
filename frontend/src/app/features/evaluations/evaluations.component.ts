@@ -211,7 +211,8 @@ export class EvaluationsComponent implements OnInit {
 
   protected addApprovalStage(recommendationId: string): void {
     const approverId = this.selectedApproverToAdd[recommendationId];
-    if (!approverId || this.stageApproversFor(recommendationId).includes(approverId)) return;
+    if (!approverId || this.stageApproversFor(recommendationId).length >= 10
+      || this.stageApproversFor(recommendationId).includes(approverId)) return;
     this.approvalStages[recommendationId] = [...this.stageApproversFor(recommendationId), approverId];
     this.selectedApproverToAdd[recommendationId] = '';
   }
