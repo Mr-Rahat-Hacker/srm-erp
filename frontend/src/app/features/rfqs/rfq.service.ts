@@ -15,8 +15,9 @@ const API_URL = '/api/v1/rfqs';
 export class RfqService {
   private readonly http = inject(HttpClient);
 
-  getRfqs(): Observable<RfqApiResponse<RfqSummary[]>> {
-    return this.http.get<RfqApiResponse<RfqSummary[]>>(API_URL);
+  getRfqs(page = 0, size = 25, q = '', status = ''): Observable<RfqApiResponse<{ items: RfqSummary[]; page: number; size: number; totalElements: number; totalPages: number }>> {
+    const params = new URLSearchParams({ page: String(page), size: String(size), q, status });
+    return this.http.get<RfqApiResponse<{ items: RfqSummary[]; page: number; size: number; totalElements: number; totalPages: number }>>(`${API_URL}/page?${params}`);
   }
 
   getRfq(rfqId: string): Observable<RfqApiResponse<Rfq>> {
