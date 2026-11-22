@@ -38,6 +38,9 @@ export class App {
     if (roles.some((role) => ['AUDITOR', 'SRM_ADMIN', 'SUPER_ADMIN', 'PROCUREMENT_BUYER', 'PROCUREMENT_APPROVER'].includes(role))) {
       items.push({ label: 'Audit trail', path: '/audit', icon: '≋' });
     }
+    if (roles.some((role) => ['SRM_ADMIN', 'SUPER_ADMIN'].includes(role))) {
+      items.push({ label: 'Approval policies', path: '/admin/approval-policies', icon: '⇢' });
+    }
     if (roles.includes('SUPER_ADMIN')) {
       items.push({ label: 'User administration', path: '/admin/users', icon: '♙' });
     }

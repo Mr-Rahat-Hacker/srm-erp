@@ -227,6 +227,7 @@ Requirement IDs are stable references for use cases, design and test cases. Unle
 - **FR-APR-001:** An authorized buyer shall be able to record a supplier recommendation for an RFQ.
 - **FR-APR-002:** A recommendation shall include commercial justification and relevant evaluation context.
 - **FR-APR-003:** The system shall route an approval request according to configured approval workflow rules.
+  - Award policies match the approved quotation total landed cost in the RFQ currency to one non-overlapping amount range: minimum inclusive, maximum exclusive (or unbounded). A matching policy supplies an ordered sequence of 1–10 active procurement approvers; the requester and recommender remain excluded from approval. A request without exactly one matching policy shall be blocked, and the applied policy code, currency, amount and route shall be audited.
 - **FR-APR-004:** An approver shall be able to review the RFQ, quotation comparison, negotiation history and buyer justification within the authenticated application.
 - **FR-APR-005:** An assigned approver shall be able to approve, reject or return an approval request for revision.
 - **FR-APR-006:** Each approval decision shall record actor, timestamp, decision and comments / reason.

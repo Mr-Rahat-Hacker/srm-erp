@@ -68,4 +68,4 @@ The first release includes backend-enforced Role-Based Access Control (RBAC), su
 
 The repository now contains working supplier registration and qualification, RFQ/invitation, versioned quotations, evaluation, negotiation, approval and award workflows, notifications, audit search, reporting, and a controlled SAP PIR outbox/gateway adapter. Backend tests and the Angular production build run in GitHub Actions.
 
-Award approvals support a buyer-selected sequence of up to 10 distinct active approvers; reusable organizational policy rules and monetary thresholds remain open. Email delivery and SAP gateway calls require deployment-specific SMTP and authorized gateway configuration before live integration.
+Award approvals are routed by active administrator-configured currency and amount policies with ordered stages of up to 10 active approvers. Ranges use an inclusive minimum and exclusive maximum, cannot overlap within a currency, and every applied policy is audited; requests without a matching policy are blocked. Email delivery and SAP gateway calls require deployment-specific SMTP and authorized gateway configuration before live integration.

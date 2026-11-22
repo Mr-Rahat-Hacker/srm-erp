@@ -1,5 +1,6 @@
 package com.srm.erp.approval.api;
 
+import com.srm.erp.approval.service.AwardApprovalPolicyService;
 import com.srm.erp.approval.service.AwardApprovalService;
 import com.srm.erp.platform.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -14,9 +15,11 @@ import java.util.UUID;
 @RequestMapping("/api/v1")
 public class AwardApprovalController {
     private final AwardApprovalService approvals;
+    private final AwardApprovalPolicyService policies;
 
-    public AwardApprovalController(AwardApprovalService approvals) {
+    public AwardApprovalController(AwardApprovalService approvals, AwardApprovalPolicyService policies) {
         this.approvals = approvals;
+        this.policies = policies;
     }
 
     @PostMapping("/rfqs/{rfqId}/award-approvals")
@@ -24,7 +27,7 @@ public class AwardApprovalController {
     public ApiResponse<ApprovalTaskRecord> requestApproval(
             @PathVariable UUID rfqId, @Valid @RequestBody AwardApprovalRequest request) {
         return ApiResponse.success("Award approval requested",
-                approvals.requestApproval(rfqId, actorId(), request));
+                policies.requestApproval(rfqId, actorId(), request.recommendationId()));
     }
 
     @GetMapping("/approvals/eligible-approvers")

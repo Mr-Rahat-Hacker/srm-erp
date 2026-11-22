@@ -19,9 +19,9 @@ export class ApprovalService {
     return this.http.get<ApiResponse<AwardRecord | null>>(`/api/v1/rfqs/${rfqId}/award`);
   }
 
-  requestApproval(rfqId: string, recommendationId: string, approverUserIds: string[]): Observable<ApiResponse<ApprovalTask>> {
+  requestApproval(rfqId: string, recommendationId: string): Observable<ApiResponse<ApprovalTask>> {
     return this.http.post<ApiResponse<ApprovalTask>>(`/api/v1/rfqs/${rfqId}/award-approvals`,
-      { recommendationId, approverUserIds });
+      { recommendationId });
   }
 
   award(rfqId: string, approvalRequestId: string): Observable<ApiResponse<AwardRecord>> {

@@ -15,8 +15,10 @@ import { ReportsComponent } from './features/reports/reports.component';
 import { LoginComponent } from './features/auth/login.component';
 import { SupplierRegistrationComponent } from './features/auth/supplier-registration.component';
 import { AdminUsersComponent } from './features/admin-users/admin-users.component';
+import { ApprovalPoliciesComponent } from './features/approvals/approval-policies.component';
 import { authGuard } from './core/auth/auth.guard';
 import { superAdminGuard } from './core/auth/super-admin.guard';
+import { approvalPolicyGuard } from './core/auth/approval-policy.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -35,6 +37,7 @@ export const routes: Routes = [
   { path: 'audit', component: AuditComponent, canActivate: [authGuard] },
   { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
   { path: 'reports', component: ReportsComponent, canActivate: [authGuard] },
+  { path: 'admin/approval-policies', component: ApprovalPoliciesComponent, canActivate: [authGuard, approvalPolicyGuard] },
   { path: 'admin/users', component: AdminUsersComponent, canActivate: [authGuard, superAdminGuard] },
   { path: '**', redirectTo: 'dashboard' },
 ];
