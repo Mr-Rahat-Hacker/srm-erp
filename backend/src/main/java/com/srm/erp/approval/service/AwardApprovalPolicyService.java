@@ -35,12 +35,13 @@ public class AwardApprovalPolicyService {
     }
 
     public List<AwardApprovalPolicyResponse> findAll() {
-        return jdbc.query("""
+        List<PolicyHeader> headers = jdbc.query("""
                 SELECT policy_id, policy_code, policy_name, currency_code, minimum_amount,
                        maximum_amount, is_active, updated_at
                 FROM srm.award_approval_policy
                 ORDER BY currency_code, minimum_amount, policy_code
-                """, (rs, row) -> mapPolicy(rs));
+                """, (rs, row) -> mapHeader(rs));
+        return headers.stream().map(this::toResponse).toList();
     }
 
     public List<EligibleApproverRecord> eligibleApprovers() {
@@ -268,27 +269,33 @@ public class AwardApprovalPolicyService {
     }
 
     private AwardApprovalPolicyResponse getPolicy(UUID policyId) {
-        return jdbc.query("""
+        PolicyHeader header = jdbc.query("""
                 SELECT policy_id, policy_code, policy_name, currency_code, minimum_amount,
                        maximum_amount, is_active, updated_at
                 FROM srm.award_approval_policy WHERE policy_id = ?
-                """, rs -> rs.next() ? mapPolicy(rs) : null, policyId);
+                """, rs -> rs.next() ? mapHeader(rs) : null, policyId);
+        return header == null ? null : toResponse(header);
     }
 
-    private AwardApprovalPolicyResponse mapPolicy(ResultSet rs) throws SQLException {
-        UUID policyId = rs.getObject("policy_id", UUID.class);
+    private PolicyHeader mapHeader(ResultSet rs) throws SQLException {
+        return new PolicyHeader(rs.getObject("policy_id", UUID.class),
+                rs.getString("policy_code"), rs.getString("policy_name"), rs.getString("currency_code"),
+                rs.getBigDecimal("minimum_amount"), rs.getBigDecimal("maximum_amount"),
+                rs.getBoolean("is_active"), rs.getTimestamp("updated_at").toInstant());
+    }
+
+    private AwardApprovalPolicyResponse toResponse(PolicyHeader header) {
         List<AwardApprovalPolicyResponse.Stage> stages = jdbc.query("""
                 SELECT u.user_id, u.full_name, u.email, s.sequence_number
                 FROM srm.award_approval_policy_stage s
                 JOIN srm.app_user u ON u.user_id = s.assigned_user_id
                 WHERE s.policy_id = ? ORDER BY s.sequence_number
-                """, (stageRs, row) -> new AwardApprovalPolicyResponse.Stage(
-                stageRs.getObject("user_id", UUID.class), stageRs.getString("full_name"),
-                stageRs.getString("email"), stageRs.getInt("sequence_number")), policyId);
-        return new AwardApprovalPolicyResponse(policyId, rs.getString("policy_code"),
-                rs.getString("policy_name"), rs.getString("currency_code"),
-                rs.getBigDecimal("minimum_amount"), rs.getBigDecimal("maximum_amount"),
-                rs.getBoolean("is_active"), stages, rs.getTimestamp("updated_at").toInstant());
+                """, (rs, row) -> new AwardApprovalPolicyResponse.Stage(
+                rs.getObject("user_id", UUID.class), rs.getString("full_name"),
+                rs.getString("email"), rs.getInt("sequence_number")), header.policyId());
+        return new AwardApprovalPolicyResponse(header.policyId(), header.policyCode(),
+                header.policyName(), header.currencyCode(), header.minimumAmount(),
+                header.maximumAmount(), header.active(), stages, header.updatedAt());
     }
 
     private void audit(UUID actor, String action, UUID policyId, String reason) {
@@ -300,6 +307,9 @@ public class AwardApprovalPolicyService {
                 """, actor, action, policyId, reason);
     }
 
+    private record PolicyHeader(UUID policyId, String policyCode, String policyName, String currencyCode,
+                                BigDecimal minimumAmount, BigDecimal maximumAmount, boolean active,
+                                java.time.Instant updatedAt) {}
     private record PolicyRange(BigDecimal minimumAmount, BigDecimal maximumAmount) {}
     private record PolicyRoute(UUID policyId, String policyCode, BigDecimal minimumAmount, BigDecimal maximumAmount) {}
     private record RecommendationAmount(UUID recommendationId, UUID recommenderId,
