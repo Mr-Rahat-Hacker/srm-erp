@@ -48,10 +48,6 @@ After the SRM release is proven, the product may expand into broader cloud procu
 
 The first release includes backend-enforced Role-Based Access Control (RBAC), supplier organization data isolation, approval-task assignment checks, segregation of duties, a read-only auditor role and a separately controlled Super Admin role for platform governance. An append-only audit trail records important security and business actions. See [RBAC role and permission matrix](docs/requirements/rbac-role-permission-matrix.md) and [Audit Log Specification](docs/requirements/audit-log-specification.md).
 
-## Security and access control
-
-The first release includes backend-enforced Role-Based Access Control (RBAC), supplier organization data isolation, approval-task assignment checks, segregation of duties and read-only auditor access. See [RBAC role and permission matrix](docs/requirements/rbac-role-permission-matrix.md).
-
 ## Technology
 
 - Frontend: Angular
@@ -70,4 +66,6 @@ The first release includes backend-enforced Role-Based Access Control (RBAC), su
 
 ## Current status
 
-Cloud development foundation initialized. Product scope is being baselined before feature implementation.
+The repository now contains working supplier registration and qualification, RFQ/invitation, versioned quotations, evaluation, negotiation, approval and award workflows, notifications, audit search, reporting, and a controlled SAP PIR outbox/gateway adapter. Backend tests and the Angular production build run in GitHub Actions.
+
+The approval route currently supports one buyer-assigned approver; multi-stage policy configuration remains open. Email delivery and SAP gateway calls require deployment-specific SMTP and authorized gateway configuration before live integration.
