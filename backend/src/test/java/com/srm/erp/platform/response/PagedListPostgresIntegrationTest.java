@@ -38,6 +38,28 @@ class PagedListPostgresIntegrationTest {
     }
 
     @Test
+    void installsTrigramIndexesForAllSubstringSearchColumns() {
+        Integer extensionCount = jdbc.queryForObject("""
+                SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm'
+                """, Integer.class);
+        Integer indexCount = jdbc.queryForObject("""
+                SELECT count(*) FROM pg_indexes
+                WHERE schemaname = 'srm'
+                  AND indexname IN (
+                    'ix_supplier_legal_name_trgm',
+                    'ix_supplier_trade_name_trgm',
+                    'ix_supplier_number_trgm',
+                    'ix_supplier_contact_email_trgm',
+                    'ix_rfq_number_trgm',
+                    'ix_rfq_title_trgm'
+                  )
+                """, Integer.class);
+
+        assertEquals(1, extensionCount);
+        assertEquals(6, indexCount);
+    }
+
+    @Test
     void supplierPageRunsAgainstPostgresWithStatusAndTextFilters() {
         authenticate(UUID.randomUUID(), "SUPPLIER_VERIFIER");
         UUID supplierId = UUID.randomUUID();
