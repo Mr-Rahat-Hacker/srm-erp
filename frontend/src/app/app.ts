@@ -18,6 +18,7 @@ export class App {
       return [
         { label: 'Overview', path: '/dashboard', icon: '⌂' },
         { label: 'Invited RFQs & quotations', path: '/supplier-portal/quotations', icon: '▧' },
+        { label: 'Company documents', path: '/supplier-portal/documents', icon: '▤' },
         { label: 'Negotiation requests', path: '/supplier-portal/negotiations', icon: '↔' },
         { label: 'Notifications', path: '/notifications', icon: '◉' },
       ];
