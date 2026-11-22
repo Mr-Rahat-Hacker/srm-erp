@@ -8,6 +8,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -56,15 +58,20 @@ public class AwardApprovalService {
                 JOIN srm.supplier_organization s ON s.supplier_id = sr.supplier_id
                 JOIN srm.quotation_version v ON v.quotation_version_id = sr.quotation_version_id
                 JOIN srm.app_user requester ON requester.user_id = ar.requested_by
-                WHERE ar.entity_type = 'AWARD' AND r.rfq_id = ?
+                WHERE ar.entity_type = 'AWARD' AND r.rfq_id = ? AND at.sequence_number = 1
                 ORDER BY ar.created_at DESC
                 """, (rs, row) -> mapTask(rs), rfqId);
     }
 
     @Transactional
     public ApprovalTaskRecord requestApproval(UUID rfqId, UUID buyerId, AwardApprovalRequest request) {
-        if (request == null || request.recommendationId() == null || request.approverUserId() == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "Select a recommendation and an approver");
+        if (request == null || request.recommendationId() == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Select a recommendation and an approval route");
+        }
+        List<UUID> approverIds = resolveApproverIds(request);
+        if (approverIds.isEmpty() || approverIds.size() > 10 || approverIds.contains(null)
+                || new HashSet<>(approverIds).size() != approverIds.size()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Choose 1 to 10 distinct approval stages");
         }
         requireBuyerOwnsRfq(rfqId, buyerId);
         Recommendation recommendation = jdbc.query("""
@@ -85,46 +92,57 @@ public class AwardApprovalService {
         if (Boolean.TRUE.equals(pending)) {
             throw new ResponseStatusException(CONFLICT, "This recommendation already has a pending approval request");
         }
-        if (recommendation.recommenderId().equals(request.approverUserId())) {
-            throw new ResponseStatusException(BAD_REQUEST, "The recommender cannot approve the same award");
+        for (UUID approverId : approverIds) {
+            if (recommendation.recommenderId().equals(approverId) || buyerId.equals(approverId)) {
+                throw new ResponseStatusException(BAD_REQUEST,
+                        "The recommender and requester cannot approve the same award");
+            }
+            Boolean eligible = jdbc.queryForObject("""
+                    SELECT EXISTS (
+                        SELECT 1 FROM srm.app_user u
+                        JOIN srm.user_role ur ON ur.user_id = u.user_id
+                        JOIN srm.role r ON r.role_id = ur.role_id
+                        WHERE u.user_id = ? AND u.account_status = 'ACTIVE'
+                          AND r.role_code = 'PROCUREMENT_APPROVER')
+                    """, Boolean.class, approverId);
+            if (!Boolean.TRUE.equals(eligible)) {
+                throw new ResponseStatusException(BAD_REQUEST,
+                        "Every assigned user must be an active procurement approver");
+            }
         }
-        Boolean eligible = jdbc.queryForObject("""
-                SELECT EXISTS (
-                    SELECT 1 FROM srm.app_user u
-                    JOIN srm.user_role ur ON ur.user_id = u.user_id
-                    JOIN srm.role r ON r.role_id = ur.role_id
-                    WHERE u.user_id = ? AND u.account_status = 'ACTIVE'
-                      AND r.role_code = 'PROCUREMENT_APPROVER')
-                """, Boolean.class, request.approverUserId());
-        if (!Boolean.TRUE.equals(eligible)) {
-            throw new ResponseStatusException(BAD_REQUEST, "Assigned user is not an active procurement approver");
-        }
+        String workflowCode = approverIds.size() == 1 ? "AWARD_SINGLE_STAGE" : "AWARD_SEQUENTIAL";
         UUID approvalRequestId = jdbc.queryForObject("""
                 INSERT INTO srm.approval_request
                     (entity_type, entity_id, workflow_code, status, requested_by)
-                VALUES ('AWARD', ?, 'AWARD_SINGLE_STAGE', 'PENDING', ?)
+                VALUES ('AWARD', ?, ?, 'PENDING', ?)
                 RETURNING approval_request_id
-                """, UUID.class, recommendation.id(), buyerId);
-        UUID taskId = jdbc.queryForObject("""
-                INSERT INTO srm.approval_task
-                    (approval_request_id, stage_code, sequence_number, assigned_user_id, task_status)
-                VALUES (?, 'AWARD', 1, ?, 'PENDING')
-                RETURNING approval_task_id
-                """, UUID.class, approvalRequestId, request.approverUserId());
+                """, UUID.class, recommendation.id(), workflowCode, buyerId);
+        UUID firstTaskId = null;
+        for (int i = 0; i < approverIds.size(); i++) {
+            UUID approverId = approverIds.get(i);
+            String taskStatus = i == 0 ? "PENDING" : "WAITING";
+            UUID taskId = jdbc.queryForObject("""
+                    INSERT INTO srm.approval_task
+                        (approval_request_id, stage_code, sequence_number, assigned_user_id, task_status)
+                    VALUES (?, 'AWARD', ?, ?, ?)
+                    RETURNING approval_task_id
+                    """, UUID.class, approvalRequestId, i + 1, approverId, taskStatus);
+            if (i == 0) firstTaskId = taskId;
+        }
+        UUID firstApproverId = approverIds.getFirst();
         jdbc.update("""
                 INSERT INTO srm.notification
                     (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
                 SELECT ?, 'APPROVAL_TASK_ASSIGNED', channels.channel, 'QUEUED',
                        'Award approval required for RFQ ' || r.rfq_number,
-                       'Review the buyer recommendation and record your decision in SRM.',
-                       '/approvals'
+                       'Review the buyer recommendation and record your decision in SRM.', '/approvals'
                 FROM srm.rfq r
                 CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
                 WHERE r.rfq_id = ?
-                """, request.approverUserId(), rfqId);
+                """, firstApproverId, rfqId);
         audit(buyerId, "AWARD_APPROVAL_REQUESTED", "APPROVAL_REQUEST", approvalRequestId,
                 rfqId, "SUCCESS", recommendation.id().toString());
-        return new ApprovalTaskRecord(approvalRequestId, taskId, rfqId, null, null,
+        return new ApprovalTaskRecord(approvalRequestId, firstTaskId, rfqId, null, null,
                 recommendation.id(), recommendation.supplierId(), recommendation.supplierNumber(),
                 recommendation.supplierName(), recommendation.versionId(), recommendation.versionNumber(),
                 recommendation.justification(), buyerId, null, "PENDING", null, null);
@@ -144,7 +162,7 @@ public class AwardApprovalService {
                 JOIN srm.supplier_organization s ON s.supplier_id = sr.supplier_id
                 JOIN srm.quotation_version v ON v.quotation_version_id = sr.quotation_version_id
                 JOIN srm.app_user requester ON requester.user_id = ar.requested_by
-                WHERE ar.entity_type = 'AWARD' AND at.assigned_user_id = ?
+                WHERE ar.entity_type = 'AWARD' AND at.assigned_user_id = ? AND at.task_status = 'PENDING'
                 ORDER BY ar.created_at DESC
                 """, (rs, row) -> mapTask(rs), approverId);
     }
@@ -164,7 +182,7 @@ public class AwardApprovalService {
                 JOIN srm.quotation_version v ON v.quotation_version_id = sr.quotation_version_id
                 JOIN srm.app_user requester ON requester.user_id = ar.requested_by
                 WHERE at.approval_task_id = ? AND at.assigned_user_id = ?
-                  AND ar.entity_type = 'AWARD'
+                  AND at.task_status = 'PENDING' AND ar.entity_type = 'AWARD'
                 """, rs -> rs.next() ? mapTask(rs) : null, taskId, approverId);
         if (task == null) throw new ResponseStatusException(NOT_FOUND, "Assigned approval task not found");
 
@@ -301,17 +319,65 @@ public class AwardApprovalService {
         if (task.requestedBy().equals(approverId)) {
             throw new ResponseStatusException(FORBIDDEN, "Requester cannot approve their own award request");
         }
-        String status = switch (decision) {
+        String taskStatus = switch (decision) {
             case "APPROVE" -> "APPROVED";
             case "REJECT" -> "REJECTED";
             default -> "RETURNED";
         };
-        jdbc.update("UPDATE srm.approval_task SET task_status = ? WHERE approval_task_id = ? AND task_status = 'PENDING'",
-                status, taskId);
+        int updated = jdbc.update("""
+                UPDATE srm.approval_task SET task_status = ?
+                WHERE approval_task_id = ? AND task_status = 'PENDING'
+                """, taskStatus, taskId);
+        if (updated != 1) throw new ResponseStatusException(CONFLICT, "Approval task has already been decided");
         jdbc.update("""
                 INSERT INTO srm.approval_decision (approval_task_id, actor_user_id, decision, remarks)
                 VALUES (?, ?, ?, ?)
                 """, taskId, approverId, decision, blankToNull(request.comments()));
+
+        String status = taskStatus;
+        if ("APPROVE".equals(decision)) {
+            Integer sequence = jdbc.queryForObject(
+                    "SELECT sequence_number FROM srm.approval_task WHERE approval_task_id = ?",
+                    Integer.class, taskId);
+            List<ApprovalStage> nextStages = jdbc.query("""
+                    SELECT approval_task_id, assigned_user_id
+                    FROM srm.approval_task
+                    WHERE approval_request_id = ? AND sequence_number > ? AND task_status = 'WAITING'
+                    ORDER BY sequence_number LIMIT 1
+                    """, (rs, row) -> new ApprovalStage(
+                    rs.getObject("approval_task_id", UUID.class),
+                    rs.getObject("assigned_user_id", UUID.class)),
+                    task.approvalRequestId(), sequence);
+            if (nextStages.isEmpty()) {
+                status = "APPROVED";
+            } else {
+                status = "PENDING";
+                ApprovalStage next = nextStages.getFirst();
+                int activated = jdbc.update("""
+                        UPDATE srm.approval_task SET task_status = 'PENDING'
+                        WHERE approval_task_id = ? AND task_status = 'WAITING'
+                        """, next.taskId());
+                if (activated != 1) {
+                    throw new ResponseStatusException(CONFLICT, "Next approval stage changed; refresh and retry");
+                }
+                jdbc.update("""
+                        INSERT INTO srm.notification
+                            (recipient_user_id, event_type, channel, delivery_status, title, body, target_path)
+                        SELECT ?, 'APPROVAL_TASK_ASSIGNED', channels.channel, 'QUEUED',
+                               'Award approval required for RFQ ' || r.rfq_number,
+                               'The previous approval stage is complete. Review and record your decision in SRM.',
+                               '/approvals'
+                        FROM srm.rfq r
+                        CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
+                        WHERE r.rfq_id = ?
+                        """, next.approverId(), task.rfqId());
+            }
+        } else {
+            jdbc.update("""
+                    UPDATE srm.approval_task SET task_status = 'CANCELLED'
+                    WHERE approval_request_id = ? AND task_status = 'WAITING'
+                    """, task.approvalRequestId());
+        }
         jdbc.update("UPDATE srm.approval_request SET status = ? WHERE approval_request_id = ?",
                 status, task.approvalRequestId());
         jdbc.update("""
@@ -323,8 +389,9 @@ public class AwardApprovalService {
                 FROM srm.rfq r
                 CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
                 WHERE r.rfq_id = ?
-                """, task.requestedBy(), "AWARD_APPROVAL_" + status, task.supplierName() + " recommendation was "
-                + status.toLowerCase().replace('_', ' ') + ". " + request.comments(), task.rfqId());
+                """, task.requestedBy(), "AWARD_APPROVAL_" + status, task.supplierName() + " recommendation is "
+                + (status.equals("PENDING") ? "awaiting the next approval stage. " : status.toLowerCase() + ". ")
+                + request.comments(), task.rfqId());
         audit(approverId, "AWARD_" + decision, "APPROVAL_REQUEST", task.approvalRequestId(),
                 task.rfqId(), "SUCCESS", blankToNull(request.comments()));
         return new ApprovalTaskRecord(task.approvalRequestId(), task.approvalTaskId(), task.rfqId(),
@@ -461,6 +528,14 @@ public class AwardApprovalService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    private List<UUID> resolveApproverIds(AwardApprovalRequest request) {
+        if (request.approverUserIds() != null && !request.approverUserIds().isEmpty()) {
+            return new ArrayList<>(request.approverUserIds());
+        }
+        return request.approverUserId() == null ? List.of() : List.of(request.approverUserId());
+    }
+
+    private record ApprovalStage(UUID taskId, UUID approverId) {}
     private record Recommendation(UUID id, UUID recommenderId, String justification, UUID supplierId,
                                   String supplierNumber, String supplierName, UUID versionId, int versionNumber) {}
 }
