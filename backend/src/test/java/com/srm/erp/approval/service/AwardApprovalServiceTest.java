@@ -37,6 +37,29 @@ class AwardApprovalServiceTest {
     }
 
     @Test
+    void rejectsNullStageInSequentialRouteBeforeDatabaseAccess() {
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> service.requestApproval(UUID.randomUUID(), UUID.randomUUID(),
+                        new AwardApprovalRequest(UUID.randomUUID(), null,
+                                java.util.Arrays.asList(UUID.randomUUID(), null))));
+
+        assertEquals(400, error.getStatusCode().value());
+        verifyNoInteractions(jdbc);
+    }
+
+    @Test
+    void rejectsMoreThanTenApprovalStagesBeforeDatabaseAccess() {
+        List<UUID> approvers = java.util.stream.IntStream.range(0, 11)
+                .mapToObj(ignored -> UUID.randomUUID()).toList();
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> service.requestApproval(UUID.randomUUID(), UUID.randomUUID(),
+                        new AwardApprovalRequest(UUID.randomUUID(), null, approvers)));
+
+        assertEquals(400, error.getStatusCode().value());
+        verifyNoInteractions(jdbc);
+    }
+
+    @Test
     void rejectsEmptyApprovalRouteBeforeDatabaseAccess() {
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> service.requestApproval(UUID.randomUUID(), UUID.randomUUID(),
