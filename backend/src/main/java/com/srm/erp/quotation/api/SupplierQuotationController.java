@@ -45,6 +45,13 @@ public class SupplierQuotationController {
                 quotations.submit(rfqId, currentActor()));
     }
 
+    @PostMapping("/rfqs/{rfqId}/quotation/withdraw")
+    public ApiResponse<SupplierRfqResponse> withdraw(
+            @PathVariable UUID rfqId, @Valid @RequestBody QuotationWithdrawalRequest request) {
+        return ApiResponse.success("Quotation withdrawn successfully",
+                quotations.withdraw(rfqId, currentActor(), request));
+    }
+
     private UUID currentActor() {
         return UUID.fromString(org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getName());
