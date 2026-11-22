@@ -2,6 +2,10 @@
   <span class="eyebrow">GOVERNANCE</span>
   <h1>Audit trail</h1>
   <p>Search immutable business and security events within your access scope.</p>
+  <div class="pagination-controls" aria-label="Audit event pages">
+    <button type="button" (click)="changePage(-1)" [disabled]="loading || page === 0">Previous</button>
+    <button type="button" (click)="changePage(1)" [disabled]="loading || page + 1 >= totalPages">Next</button>
+  </div>
 </section>
 
 @if (error) { <div class="notice error" role="alert">{{ error }}</div> }
@@ -17,7 +21,7 @@
 </form>
 
 <section class="results">
-  <header><h2>Events</h2><span>Showing up to 100 most recent matching records</span></header>
+  <header><h2>Events</h2><span>{{ totalElements }} matching records · Page {{ page + 1 }} of {{ totalPages || 1 }}</span></header>
   @if (loading) {
     <p class="empty">Loading audit events…</p>
   } @else if (!events.length) {
