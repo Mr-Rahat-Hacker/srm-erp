@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -11,7 +12,7 @@ import {
 
 @Component({
   selector: 'app-approval-policies',
-  imports: [FormsModule],
+  imports: [FormsModule, DecimalPipe],
   templateUrl: './approval-policies.component.html',
   styleUrl: './approval-policies.component.scss',
 })
@@ -28,6 +29,10 @@ export class ApprovalPoliciesComponent implements OnInit {
   protected selectedApproverId = '';
   protected deactivateReason = '';
   protected form = this.emptyForm();
+
+  protected get hasActivePolicies(): boolean {
+    return this.policies.some((policy) => policy.active);
+  }
 
   ngOnInit(): void {
     this.load();
