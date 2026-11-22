@@ -1,0 +1,125 @@
+<header class="page-heading">
+  <span class="eyebrow">ADMINISTRATION / WORKFLOW</span>
+  <h1>Award approval policies</h1>
+  <p>Route award requests automatically by quotation amount and currency.</p>
+</header>
+
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
+
+<section class="policy-layout">
+  <form class="policy-form" (ngSubmit)="save()">
+    <div class="card-heading">
+      <div>
+        <h2>{{ editingPolicyId ? 'Edit approval policy' : 'Create approval policy' }}</h2>
+        <p>Amount ranges are inclusive at the minimum and exclusive at the maximum.</p>
+      </div>
+      @if (editingPolicyId) { <button class="secondary-button" type="button" (click)="reset()">Cancel edit</button> }
+    </div>
+    <div class="form-grid">
+      <label>Policy code <span>*</span>
+        <input name="policyCode" [(ngModel)]="form.policyCode" required maxlength="50" pattern="[A-Za-z0-9_-]+">
+      </label>
+      <label>Policy name <span>*</span>
+        <input name="policyName" [(ngModel)]="form.policyName" required maxlength="160">
+      </label>
+      <label>Currency <span>*</span>
+        <input name="currencyCode" [(ngModel)]="form.currencyCode" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}">
+      </label>
+      <label>Minimum amount (inclusive) <span>*</span>
+        <input name="minimumAmount" [(ngModel)]="form.minimumAmount" type="number" min="0" step="0.01" required>
+      </label>
+      <label>Maximum amount (exclusive)
+        <input name="maximumAmount" [(ngModel)]="form.maximumAmount" type="number" min="0.01" step="0.01" placeholder="Leave blank for no upper limit">
+      </label>
+      <div class="stage-picker">
+        <label for="approverStage">Add approver stage <span>*</span></label>
+        <div class="inline-control">
+          <select id="approverStage" name="approverStage" [(ngModel)]="selectedApproverId">
+            <option value="">Select active procurement approver</option>
+            @for (approver of approvers; track approver.userId) {
+              @if (!form.approverUserIds.includes(approver.userId)) {
+                <option [value]="approver.userId">{{ approver.fullName }} · {{ approver.email }}</option>
+              }
+            }
+          </select>
+          <button class="secondary-button" type="button" (click)="addApprover()"
+            [disabled]="!selectedApproverId || form.approverUserIds.length >= 10">Add</button>
+        </div>
+      </div>
+      @if (form.approverUserIds.length > 0) {
+        <ol class="approval-stages">
+          @for (userId of form.approverUserIds; track userId; let stage = $index) {
+            <li>
+              <strong>Stage {{ stage + 1 }}</strong>
+              <span>{{ approverName(userId) }}</span>
+              <button class="text-button" type="button" [disabled]="stage === 0" (click)="moveApprover(stage, -1)">Up</button>
+              <button class="text-button" type="button" [disabled]="stage === form.approverUserIds.length - 1"
+                (click)="moveApprover(stage, 1)">Down</button>
+              <button class="text-button danger-text" type="button" (click)="removeApprover(stage)">Remove</button>
+            </li>
+          }
+        </ol>
+      }
+      <label class="wide">Reason for change <span>*</span>
+        <textarea name="reason" [(ngModel)]="form.reason" required maxlength="500" rows="2"
+          placeholder="Business reason recorded in the audit trail"></textarea>
+      </label>
+    </div>
+    <div class="form-actions">
+      @if (editingPolicyId) { <button class="secondary-button" type="button" (click)="reset()">Clear</button> }
+      <button class="primary-button" type="submit" [disabled]="saving || approvers.length === 0 || form.approverUserIds.length === 0">
+        {{ saving ? 'Saving…' : editingPolicyId ? 'Update policy' : 'Create policy' }}
+      </button>
+    </div>
+    @if (approvers.length === 0) {
+      <p class="helper-text">Assign at least one active PROCUREMENT_APPROVER role before configuring a policy.</p>
+    }
+  </form>
+
+  <section class="policy-list">
+    <div class="card-heading">
+      <div><h2>Configured policies</h2><p>Active amount bands for each currency cannot overlap.</p></div>
+      <button class="secondary-button" type="button" (click)="load()" [disabled]="loading">Refresh</button>
+    </div>
+    @if (loading) {
+      <p class="empty-state">Loading policies…</p>
+    } @else if (policies.length === 0) {
+      <p class="empty-state">No approval policies configured. Award requests require a matching active policy.</p>
+    } @else {
+      @for (policy of policies; track policy.policyId) {
+        <article class="policy-card" [class.inactive]="!policy.active">
+          <div class="policy-title">
+            <div><span class="policy-code">{{ policy.policyCode }} · {{ policy.currencyCode }}</span>
+              <h3>{{ policy.policyName }}</h3></div>
+            <span class="status-pill">{{ policy.active ? 'ACTIVE' : 'INACTIVE' }}</span>
+          </div>
+          <p class="amount-range">
+            {{ policy.minimumAmount | number:'1.2-2' }} ≤ amount
+            @if (policy.maximumAmount === null) { <span> · no upper limit</span> }
+            @else { <span> &lt; {{ policy.maximumAmount | number:'1.2-2' }}</span> }
+            {{ policy.currencyCode }}
+          </p>
+          <ol class="stage-list">
+            @for (stage of policy.stages; track stage.sequenceNumber) {
+              <li><span>Stage {{ stage.sequenceNumber }}</span><strong>{{ stage.fullName }}</strong><small>{{ stage.email }}</small></li>
+            }
+          </ol>
+          <div class="policy-actions">
+            <button class="secondary-button" type="button" (click)="edit(policy)">Edit</button>
+            @if (policy.active) {
+              <button class="danger-button" type="button" (click)="deactivate(policy)"
+                [disabled]="saving || !deactivateReason.trim()">Deactivate</button>
+            }
+          </div>
+        </article>
+      }
+    }
+    @if (policies.some(policy => policy.active)) {
+      <label class="deactivation-reason">Reason for policy deactivation
+        <input name="deactivateReason" [(ngModel)]="deactivateReason" maxlength="500"
+          placeholder="Required to deactivate a policy">
+      </label>
+    }
+  </section>
+</section>
