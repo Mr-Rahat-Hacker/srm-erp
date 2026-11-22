@@ -113,19 +113,40 @@
             <small>Quotation v{{ recommendation.quotationVersion }} · {{ recommendation.recommenderName }} · {{ recommendation.createdAt | date:'medium' }}</small>
             @if (!finalAward && !hasPendingApproval(recommendation.recommendationId) && eligibleApprovers.length > 0) {
               <div class="approval-request">
-                <label>Assign approver
-                  <select [name]="'approver-' + recommendation.recommendationId"
-                    [(ngModel)]="selectedApprovers[recommendation.recommendationId]">
+                <label>Add approval stage
+                  <select [name]="'approver-stage-' + recommendation.recommendationId"
+                    [(ngModel)]="selectedApproverToAdd[recommendation.recommendationId]">
                     <option value="">Select an active procurement approver</option>
                     @for (approver of eligibleApprovers; track approver.userId) {
-                      @if (approver.userId !== recommendation.recommendedBy) {
+                      @if (approver.userId !== recommendation.recommendedBy
+                        && !stageApproversFor(recommendation.recommendationId).includes(approver.userId)) {
                         <option [value]="approver.userId">{{ approver.fullName }} · {{ approver.email }}</option>
                       }
                     }
                   </select>
                 </label>
+                <button type="button"
+                  [disabled]="!selectedApproverToAdd[recommendation.recommendationId]
+                    || stageApproversFor(recommendation.recommendationId).length >= 10"
+                  (click)="addApprovalStage(recommendation.recommendationId)">Add stage</button>
+                <small>Stages run in order. You can set up to 10 distinct approvers.</small>
+                @if (stageApproversFor(recommendation.recommendationId).length > 0) {
+                  <ol class="approval-stages">
+                    @for (approverId of stageApproversFor(recommendation.recommendationId); track approverId; let stageIndex = $index) {
+                      <li>
+                        <span>Stage {{ stageIndex + 1 }} · {{ approverName(approverId) }}</span>
+                        <button type="button" [disabled]="stageIndex === 0"
+                          (click)="moveApprovalStage(recommendation.recommendationId, stageIndex, -1)">Move up</button>
+                        <button type="button" [disabled]="stageIndex === stageApproversFor(recommendation.recommendationId).length - 1"
+                          (click)="moveApprovalStage(recommendation.recommendationId, stageIndex, 1)">Move down</button>
+                        <button type="button"
+                          (click)="removeApprovalStage(recommendation.recommendationId, stageIndex)">Remove</button>
+                      </li>
+                    }
+                  </ol>
+                }
                 <button type="button" class="primary-button"
-                  [disabled]="!selectedApprovers[recommendation.recommendationId] || savingWorkflow"
+                  [disabled]="stageApproversFor(recommendation.recommendationId).length === 0 || savingWorkflow"
                   (click)="requestAwardApproval(recommendation.recommendationId)">Request approval</button>
               </div>
             }

@@ -71,3 +71,22 @@ label span { color:#b54b46; }
 .sap-request-status strong,.sap-request-status small { display:block; }
 .sap-request-status small { margin-top:3px; color:#8795a5; font-size:9px; overflow-wrap:anywhere; }
 .sap-request-status .error-text { color:#a13d36; }
+
+.approval-stages {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.approval-stages li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.approval-stages li span {
+  flex: 1 1 18rem;
+}

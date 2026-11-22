@@ -42,7 +42,8 @@ export class EvaluationsComponent implements OnInit {
   protected successMessage = '';
   protected eligibleApprovers: EligibleApprover[] = [];
   protected approvalRequests: ApprovalTask[] = [];
-  protected selectedApprovers: Record<string, string> = {};
+  protected selectedApproverToAdd: Record<string, string> = {};
+  protected approvalStages: Record<string, string[]> = {};
   protected finalAward: AwardRecord | null = null;
   protected savingWorkflow = false;
   protected sapSystemCode = '';
@@ -204,16 +205,47 @@ export class EvaluationsComponent implements OnInit {
     return this.requestsFor(recommendationId).some((request) => request.status === 'PENDING');
   }
 
+  protected stageApproversFor(recommendationId: string): string[] {
+    return this.approvalStages[recommendationId] ?? [];
+  }
+
+  protected addApprovalStage(recommendationId: string): void {
+    const approverId = this.selectedApproverToAdd[recommendationId];
+    if (!approverId || this.stageApproversFor(recommendationId).length >= 10
+      || this.stageApproversFor(recommendationId).includes(approverId)) return;
+    this.approvalStages[recommendationId] = [...this.stageApproversFor(recommendationId), approverId];
+    this.selectedApproverToAdd[recommendationId] = '';
+  }
+
+  protected removeApprovalStage(recommendationId: string, index: number): void {
+    this.approvalStages[recommendationId] =
+      this.stageApproversFor(recommendationId).filter((_, stageIndex) => stageIndex !== index);
+  }
+
+  protected moveApprovalStage(recommendationId: string, index: number, offset: number): void {
+    const stages = [...this.stageApproversFor(recommendationId)];
+    const target = index + offset;
+    if (target < 0 || target >= stages.length) return;
+    [stages[index], stages[target]] = [stages[target], stages[index]];
+    this.approvalStages[recommendationId] = stages;
+  }
+
+  protected approverName(userId: string): string {
+    const approver = this.eligibleApprovers.find((item) => item.userId === userId);
+    return approver ? `${approver.fullName} · ${approver.email}` : userId;
+  }
+
   protected requestAwardApproval(recommendationId: string): void {
-    const approverId = this.selectedApprovers[recommendationId];
-    if (!approverId || this.savingWorkflow || this.finalAward) return;
+    const approverIds = this.stageApproversFor(recommendationId);
+    if (approverIds.length === 0 || this.savingWorkflow || this.finalAward) return;
     this.savingWorkflow = true;
     this.errorMessage = '';
     this.successMessage = '';
-    this.approvals.requestApproval(this.selectedRfqId, recommendationId, approverId).subscribe({
+    this.approvals.requestApproval(this.selectedRfqId, recommendationId, approverIds).subscribe({
       next: (response) => {
         this.successMessage = response.message;
-        this.selectedApprovers[recommendationId] = '';
+        this.approvalStages[recommendationId] = [];
+        this.selectedApproverToAdd[recommendationId] = '';
         this.savingWorkflow = false;
         this.loadAwardWorkflow();
       },
