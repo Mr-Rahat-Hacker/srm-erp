@@ -112,6 +112,11 @@
     <div class="card-heading">
       <div><h2>Sourcing events</h2><p>{{ rfqs.length }} RFQs in your accessible scope</p></div>
     </div>
+    <div class="list-filters">
+      <label>Search RFQs <input name="rfqSearch" [(ngModel)]="searchText" (keyup.enter)="applyRfqFilters()" placeholder="RFQ number or title"></label>
+      <label>Status <select name="rfqStatus" [(ngModel)]="statusFilter" (ngModelChange)="applyRfqFilters()"><option value="">All statuses</option><option>DRAFT</option><option>PUBLISHED</option><option>OPEN</option><option>EVALUATION</option><option>NEGOTIATION</option><option>AWARDED</option><option>CLOSED</option><option>CANCELLED</option></select></label>
+      <button class="secondary-button" type="button" (click)="applyRfqFilters()" [disabled]="loading">Search</button>
+    </div>
     @if (loading) {
       <p class="empty-state">Loading RFQs…</p>
     } @else if (rfqs.length === 0) {
@@ -134,6 +139,11 @@
         </table>
       </div>
     }
+    <div class="pagination-controls" aria-label="RFQ pages">
+      <span>{{ totalElements }} sourcing events · Page {{ page + 1 }} of {{ totalPages || 1 }}</span>
+      <div><button class="secondary-button" type="button" (click)="changeRfqPage(-1)" [disabled]="loading || page === 0">Previous</button>
+      <button class="secondary-button" type="button" (click)="changeRfqPage(1)" [disabled]="loading || page + 1 >= totalPages">Next</button></div>
+    </div>
   </section>
 
   @if (selectedRfq; as rfq) {
