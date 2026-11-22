@@ -77,7 +77,7 @@ public class PagedListController {
                 "ROLE_SUPPLIER_VERIFIER", "ROLE_SRM_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_AUDITOR")
                 .contains(a.getAuthority()));
         String term = contains(q);
-        String lifecycle = blankToNull(status);
+        String lifecycle = status == null ? "" : status.trim();
         String where = """
                 WHERE (? = false OR r.buyer_user_id = ?)
                   AND (? = '' OR r.rfq_number ILIKE ? OR r.title ILIKE ?)
