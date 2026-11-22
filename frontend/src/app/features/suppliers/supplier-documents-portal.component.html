@@ -1,19 +1,20 @@
 <div class="page-heading">
   <div>
-    <span class="eyebrow">SUPPLIER PORTAL / DOCUMENTS</span>
-    <h1>Company documents</h1>
-    <p>Upload and review your organization’s compliance documents and their verification status.</p>
+    <span class="eyebrow">SUPPLIER PORTAL / COMPANY</span>
+    <h1>Company profile and documents</h1>
+    <p>Maintain your company details, submit corrections, and manage compliance documents.</p>
   </div>
 </div>
 
 @if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+@if (successMessage) { <div class="notice success" role="status">{{ successMessage }}</div> }
 @if (loading) { <div class="notice" role="status">Loading supplier profiles…</div> }
 @if (!loading && profiles.length === 0) {
   <section class="empty-state">No active supplier organization is linked to this account. Contact your supplier administrator.</section>
 }
 @if (profiles.length > 1) {
   <label class="profile-select">Supplier organization
-    <select name="supplierId" [(ngModel)]="selectedSupplierId">
+    <select name="supplierId" [ngModel]="selectedSupplierId" (ngModelChange)="selectProfile($event)">
       @for (profile of profiles; track profile.supplierId) {
         <option [value]="profile.supplierId">{{ profile.legalName }} · {{ profile.supplierNumber }}</option>
       }
@@ -23,11 +24,62 @@
 @if (selectedProfile; as profile) {
   <section class="profile-status">
     <div><span>Profile status</span><strong>{{ profile.lifecycleStatus }}</strong></div>
-    @if (profile.lifecycleStatus === 'DRAFT' || profile.lifecycleStatus === 'CORRECTION_REQUIRED') {
+    @if (profileEditable) {
       <button type="button" [disabled]="submitting" (click)="submitProfile()">
         {{ submitting ? 'Submitting…' : 'Submit profile for verification' }}
       </button>
+    } @else {
+      <span class="locked-note">Profile edits are available while draft or correction-required.</span>
     }
+  </section>
+
+  <section class="profile-editor">
+    <div class="section-heading"><div><h2>Company details</h2><p>Updates are audited and locked during verification.</p></div></div>
+    <form (ngSubmit)="saveProfile()">
+      <div class="profile-form-grid">
+        <label>Legal name
+          <input name="legalName" [(ngModel)]="profileForm.legalName" required maxlength="200" [disabled]="!profileEditable">
+        </label>
+        <label>Trade name
+          <input name="tradeName" [(ngModel)]="profileForm.tradeName" maxlength="200" [disabled]="!profileEditable">
+        </label>
+        <label>GSTIN
+          <input name="gstin" [(ngModel)]="profileForm.gstin" maxlength="15" [disabled]="!profileEditable">
+        </label>
+        <label>PAN
+          <input name="pan" [(ngModel)]="profileForm.pan" maxlength="10" [disabled]="!profileEditable">
+        </label>
+        <label>Primary contact
+          <input name="contactName" [(ngModel)]="profileForm.contactName" required maxlength="160" [disabled]="!profileEditable">
+        </label>
+        <label>Contact email
+          <input type="email" name="email" [(ngModel)]="profileForm.email" maxlength="254" [disabled]="!profileEditable">
+        </label>
+        <label>Phone
+          <input name="phone" [(ngModel)]="profileForm.phone" maxlength="40" [disabled]="!profileEditable">
+        </label>
+        <label>Registered address
+          <input name="addressLine1" [(ngModel)]="profileForm.addressLine1" maxlength="200" [disabled]="!profileEditable">
+        </label>
+        <label>City
+          <input name="city" [(ngModel)]="profileForm.city" maxlength="100" [disabled]="!profileEditable">
+        </label>
+        <label>State / region
+          <input name="stateRegion" [(ngModel)]="profileForm.stateRegion" maxlength="100" [disabled]="!profileEditable">
+        </label>
+        <label>Postal code
+          <input name="postalCode" [(ngModel)]="profileForm.postalCode" maxlength="20" [disabled]="!profileEditable">
+        </label>
+        <label>Country code
+          <input name="countryCode" [(ngModel)]="profileForm.countryCode" minlength="2" maxlength="2" [disabled]="!profileEditable">
+        </label>
+      </div>
+      @if (profileEditable) {
+        <button class="save-profile" type="submit" [disabled]="savingProfile || !profileForm.legalName?.trim() || !profileForm.contactName?.trim()">
+          {{ savingProfile ? 'Saving…' : 'Save profile changes' }}
+        </button>
+      }
+    </form>
   </section>
 }
 @if (selectedSupplierId) {
