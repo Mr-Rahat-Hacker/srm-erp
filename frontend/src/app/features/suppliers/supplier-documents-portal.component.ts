@@ -62,6 +62,9 @@ export class SupplierDocumentsPortalComponent implements OnInit {
     const payload = Object.fromEntries(
       Object.entries(this.profileForm).map(([key, value]) => [key, value?.trim() || undefined]),
     ) as SupplierProfileUpdate;
+    if (payload.gstin) payload.gstin = payload.gstin.toUpperCase();
+    if (payload.pan) payload.pan = payload.pan.toUpperCase();
+    if (payload.countryCode) payload.countryCode = payload.countryCode.toUpperCase();
     this.suppliers.updateMySupplierProfile(profile.supplierId, payload).subscribe({
       next: (response) => {
         this.profiles = this.profiles.map((item) => item.supplierId === profile.supplierId ? response.data : item);
