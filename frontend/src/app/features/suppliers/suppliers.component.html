@@ -152,6 +152,74 @@
       }
     </section>
 
+    <section class="lifecycle-panel" aria-label="SAP vendor code mappings">
+      <div class="lifecycle-heading">
+        <div>
+          <h3>SAP Vendor Code mappings</h3>
+          <p>Connect this approved SRM supplier to its vendor code in each SAP system.</p>
+        </div>
+        @if (supplier.lifecycleStatus !== 'APPROVED') {
+          <span class="draft-tag">Available after approval</span>
+        }
+      </div>
+
+      @if (mappingLoading) {
+        <p class="lifecycle-help" role="status">Loading SAP mappings…</p>
+      } @else if (sapMappings.length === 0) {
+        <p class="lifecycle-help">No SAP Vendor Code mappings are recorded.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>SAP system</th><th>Vendor code</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              @for (mapping of sapMappings; track mapping.sapSystemCode) {
+                <tr>
+                  <td>{{ mapping.sapSystemCode }}</td>
+                  <td class="supplier-number">{{ mapping.sapVendorCode }}</td>
+                  <td><span class="status-pill">{{ mapping.active ? 'ACTIVE' : 'INACTIVE' }}</span></td>
+                  <td>
+                    @if (mapping.active && supplier.lifecycleStatus === 'APPROVED') {
+                      <button class="text-button" type="button" (click)="deactivateSapMapping(mapping)"
+                        [disabled]="mappingSaving || !mappingDeactivateReason.trim()">Deactivate</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (supplier.lifecycleStatus === 'APPROVED') {
+        <div class="mapping-editor">
+          <h4>Add or update mapping</h4>
+          <div class="form-grid">
+            <label>SAP system code <span>*</span>
+              <input name="sapSystemCode" [(ngModel)]="mappingForm.sapSystemCode" maxlength="32"
+                pattern="[A-Za-z0-9_-]+" placeholder="e.g. S4PROD">
+            </label>
+            <label>SAP Vendor Code <span>*</span>
+              <input name="sapVendorCode" [(ngModel)]="mappingForm.sapVendorCode" maxlength="40"
+                pattern="[A-Za-z0-9_-]+" placeholder="Vendor code">
+            </label>
+            <label class="wide">Reason for mapping <span>*</span>
+              <input name="sapMappingReason" [(ngModel)]="mappingForm.reason" maxlength="500" placeholder="Business justification">
+            </label>
+            <label class="wide">Reason for deactivation
+              <input name="sapMappingDeactivateReason" [(ngModel)]="mappingDeactivateReason" maxlength="500" placeholder="Required to deactivate an active mapping">
+            </label>
+          </div>
+          <div class="lifecycle-actions">
+            <button class="primary-button" type="button" (click)="saveSapMapping()"
+              [disabled]="mappingSaving || !mappingForm.sapSystemCode.trim() || !mappingForm.sapVendorCode.trim() || !mappingForm.reason.trim()">
+              {{ mappingSaving ? 'Saving…' : 'Save mapping' }}
+            </button>
+          </div>
+          <p class="helper-text">Only supplier verifiers and SRM administrators can save or deactivate mappings. Every change is audited.</p>
+        </div>
+      }
+    </section>
+
     <app-supplier-documents [supplierId]="supplier.supplierId" />
   </section>
 }

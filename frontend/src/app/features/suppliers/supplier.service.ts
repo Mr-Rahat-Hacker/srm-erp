@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ApiResponse,
+  SapVendorMapping,
+  SapVendorMappingRequest,
   Supplier,
   SupplierDocument,
   SupplierLifecycleResult,
@@ -27,6 +29,34 @@ export class SupplierService {
 
   getSupplier(supplierId: string): Observable<ApiResponse<Supplier>> {
     return this.http.get<ApiResponse<Supplier>>(`${API_BASE_URL}/suppliers/${supplierId}`);
+  }
+
+  getSapVendorMappings(supplierId: string): Observable<ApiResponse<SapVendorMapping[]>> {
+    return this.http.get<ApiResponse<SapVendorMapping[]>>(
+      `${API_BASE_URL}/suppliers/${supplierId}/sap-vendor-mappings`,
+    );
+  }
+
+  saveSapVendorMapping(
+    supplierId: string,
+    payload: SapVendorMappingRequest,
+  ): Observable<ApiResponse<SapVendorMapping>> {
+    return this.http.put<ApiResponse<SapVendorMapping>>(
+      `${API_BASE_URL}/suppliers/${supplierId}/sap-vendor-mappings`,
+      payload,
+    );
+  }
+
+  deactivateSapVendorMapping(
+    supplierId: string,
+    systemCode: string,
+    reason: string,
+  ): Observable<ApiResponse<void>> {
+    const encodedSystemCode = encodeURIComponent(systemCode);
+    const encodedReason = encodeURIComponent(reason);
+    return this.http.delete<ApiResponse<void>>(
+      `${API_BASE_URL}/suppliers/${supplierId}/sap-vendor-mappings/${encodedSystemCode}?reason=${encodedReason}`,
+    );
   }
 
   registerSupplier(payload: SupplierRegistration): Observable<ApiResponse<Supplier>> {

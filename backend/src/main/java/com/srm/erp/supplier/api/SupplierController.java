@@ -1,6 +1,7 @@
 package com.srm.erp.supplier.api;
 
 import com.srm.erp.platform.response.ApiResponse;
+import com.srm.erp.supplier.service.SapVendorMappingService;
 import com.srm.erp.supplier.service.SupplierLifecycleService;
 import com.srm.erp.supplier.service.SupplierService;
 import jakarta.validation.Valid;
@@ -16,10 +17,13 @@ import java.util.UUID;
 public class SupplierController {
     private final SupplierService supplierService;
     private final SupplierLifecycleService lifecycleService;
+    private final SapVendorMappingService sapVendorMappingService;
 
-    public SupplierController(SupplierService supplierService, SupplierLifecycleService lifecycleService) {
+    public SupplierController(SupplierService supplierService, SupplierLifecycleService lifecycleService,
+                              SapVendorMappingService sapVendorMappingService) {
         this.supplierService = supplierService;
         this.lifecycleService = lifecycleService;
+        this.sapVendorMappingService = sapVendorMappingService;
     }
 
     @PostMapping
@@ -39,6 +43,30 @@ public class SupplierController {
     @PreAuthorize("hasAnyRole('PROCUREMENT_BUYER','SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
     public ApiResponse<SupplierResponse> findById(@PathVariable UUID supplierId) {
         return ApiResponse.success("Supplier retrieved successfully", supplierService.findByIdPublic(supplierId));
+    }
+
+    @GetMapping("/{supplierId}/sap-vendor-mappings")
+    @PreAuthorize("hasAnyRole('PROCUREMENT_BUYER','SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
+    public ApiResponse<List<SapVendorMappingResponse>> findSapVendorMappings(@PathVariable UUID supplierId) {
+        return ApiResponse.success("SAP Vendor Code mappings retrieved successfully",
+                sapVendorMappingService.findForSupplier(supplierId));
+    }
+
+    @PutMapping("/{supplierId}/sap-vendor-mappings")
+    @PreAuthorize("hasAnyRole('SUPPLIER_VERIFIER','SRM_ADMIN')")
+    public ApiResponse<SapVendorMappingResponse> saveSapVendorMapping(
+            @PathVariable UUID supplierId, @Valid @RequestBody SapVendorMappingRequest request) {
+        return ApiResponse.success("SAP Vendor Code mapping saved successfully",
+                sapVendorMappingService.save(supplierId, currentActor(), request));
+    }
+
+    @DeleteMapping("/{supplierId}/sap-vendor-mappings/{sapSystemCode}")
+    @PreAuthorize("hasAnyRole('SUPPLIER_VERIFIER','SRM_ADMIN')")
+    public ApiResponse<Void> deactivateSapVendorMapping(
+            @PathVariable UUID supplierId, @PathVariable String sapSystemCode,
+            @RequestParam String reason) {
+        sapVendorMappingService.deactivate(supplierId, sapSystemCode, currentActor(), reason);
+        return ApiResponse.success("SAP Vendor Code mapping deactivated successfully", null);
     }
 
     @PostMapping("/{supplierId}/submit")

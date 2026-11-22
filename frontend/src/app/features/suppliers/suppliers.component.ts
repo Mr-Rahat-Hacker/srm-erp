@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { SupplierService } from './supplier.service';
 import {
   ApiResponse,
+  SapVendorMapping,
   Supplier,
   SupplierLifecycleResult,
   SupplierRegistration,
@@ -31,6 +32,11 @@ export class SuppliersComponent implements OnInit {
   protected selectedSupplier: Supplier | null = null;
   protected successMessage = '';
   protected errorMessage = '';
+  protected sapMappings: SapVendorMapping[] = [];
+  protected mappingLoading = false;
+  protected mappingSaving = false;
+  protected mappingForm = { sapSystemCode: '', sapVendorCode: '', reason: '' };
+  protected mappingDeactivateReason = '';
 
   protected form: SupplierRegistration = this.emptyForm();
 
@@ -59,12 +65,15 @@ export class SuppliersComponent implements OnInit {
 
   protected viewDetails(supplier: Supplier): void {
     this.selectedSupplier = null;
+    this.sapMappings = [];
+    this.mappingForm = { sapSystemCode: '', sapVendorCode: '', reason: '' };
     this.detailsLoading = true;
     this.supplierService.getSupplier(supplier.supplierId).subscribe({
       next: (response) => {
         this.selectedSupplier = response.data;
         this.lifecycleRemarks = '';
         this.detailsLoading = false;
+        this.loadSapMappings(response.data.supplierId);
       },
       error: (error: HttpErrorResponse) => {
         this.errorMessage = error.status === 403
@@ -80,6 +89,78 @@ export class SuppliersComponent implements OnInit {
   protected closeDetails(): void {
     this.selectedSupplier = null;
     this.lifecycleRemarks = '';
+    this.sapMappings = [];
+    this.mappingForm = { sapSystemCode: '', sapVendorCode: '', reason: '' };
+  }
+
+  private loadSapMappings(supplierId: string): void {
+    this.mappingLoading = true;
+    this.supplierService.getSapVendorMappings(supplierId).subscribe({
+      next: (response) => {
+        this.sapMappings = response.data ?? [];
+        this.mappingLoading = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.status === 403
+          ? 'Your account cannot view SAP Vendor Code mappings.'
+          : 'Unable to load SAP Vendor Code mappings.';
+        this.mappingLoading = false;
+      },
+    });
+  }
+
+  protected saveSapMapping(): void {
+    if (!this.selectedSupplier || this.mappingSaving) return;
+    const payload = {
+      sapSystemCode: this.mappingForm.sapSystemCode.trim(),
+      sapVendorCode: this.mappingForm.sapVendorCode.trim(),
+      reason: this.mappingForm.reason.trim(),
+    };
+    if (!payload.sapSystemCode || !payload.sapVendorCode || !payload.reason) {
+      this.errorMessage = 'Enter the SAP system, vendor code, and reason.';
+      return;
+    }
+    this.mappingSaving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.supplierService.saveSapVendorMapping(this.selectedSupplier.supplierId, payload).subscribe({
+      next: (response) => {
+        this.successMessage = response.message || 'SAP Vendor Code mapping saved.';
+        this.mappingForm = { sapSystemCode: '', sapVendorCode: '', reason: '' };
+        this.mappingSaving = false;
+        this.loadSapMappings(this.selectedSupplier!.supplierId);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to save SAP Vendor Code mapping.';
+        this.mappingSaving = false;
+      },
+    });
+  }
+
+  protected deactivateSapMapping(mapping: SapVendorMapping): void {
+    if (!this.selectedSupplier || this.mappingSaving) return;
+    const reason = this.mappingDeactivateReason.trim();
+    if (!reason) {
+      this.errorMessage = 'Add a reason before deactivating a mapping.';
+      return;
+    }
+    this.mappingSaving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.supplierService.deactivateSapVendorMapping(
+      this.selectedSupplier.supplierId, mapping.sapSystemCode, reason,
+    ).subscribe({
+      next: (response) => {
+        this.successMessage = response.message || 'SAP Vendor Code mapping deactivated.';
+        this.mappingDeactivateReason = '';
+        this.mappingSaving = false;
+        this.loadSapMappings(this.selectedSupplier!.supplierId);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage = error.error?.message ?? 'Unable to deactivate SAP Vendor Code mapping.';
+        this.mappingSaving = false;
+      },
+    });
   }
 
   protected submitForReview(): void {

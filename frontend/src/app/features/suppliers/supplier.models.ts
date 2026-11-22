@@ -53,6 +53,19 @@ export interface SupplierLifecycleResult {
   action: string;
 }
 
+export interface SapVendorMapping {
+  supplierId: string;
+  sapSystemCode: string;
+  sapVendorCode: string;
+  active: boolean;
+}
+
+export interface SapVendorMappingRequest {
+  sapSystemCode: string;
+  sapVendorCode: string;
+  reason: string;
+}
+
 export interface SupplierDocument {
   documentId: string;
   supplierId: string;
