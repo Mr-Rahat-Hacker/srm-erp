@@ -1,0 +1,71 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">PLATFORM GOVERNANCE</span>
+    <h1>User administration</h1>
+    <p>Provision internal access and manage account status. Role assignments and status changes are audited.</p>
+  </div>
+</div>
+
+@if (error) { <div class="notice error" role="alert">{{ error }}</div> }
+@if (notice) { <div class="notice success" role="status">{{ notice }}</div> }
+
+<section class="panel">
+  <h2>Create internal account</h2>
+  <form (ngSubmit)="create()">
+    <div class="form-grid">
+      <label>Full name
+        <input name="fullName" [(ngModel)]="form.fullName" required maxlength="160" autocomplete="name">
+      </label>
+      <label>Email
+        <input type="email" name="email" [(ngModel)]="form.email" required maxlength="254" autocomplete="email">
+      </label>
+      <label>Temporary password
+        <input type="password" name="password" [(ngModel)]="form.password" required minlength="12" maxlength="128" autocomplete="new-password">
+      </label>
+    </div>
+    <fieldset>
+      <legend>Assign roles</legend>
+      @for (role of roles; track role) {
+        <label class="role-option">
+          <input type="checkbox" [checked]="form.roles.includes(role)" (change)="toggleRole(role, $any($event.target).checked)">
+          {{ role.replaceAll('_', ' ') }}
+        </label>
+      }
+    </fieldset>
+    <button type="submit" [disabled]="saving || !form.fullName.trim() || !form.email.trim() || form.password.length < 12 || form.roles.length === 0">
+      {{ saving ? 'Creating…' : 'Create account' }}
+    </button>
+  </form>
+</section>
+
+<section class="panel user-list">
+  <div class="list-heading"><div><h2>Accounts</h2><p>Internal and supplier identities</p></div>
+    <button type="button" class="secondary" (click)="load()" [disabled]="loading">Refresh</button>
+  </div>
+  @if (loading) { <p class="muted">Loading accounts…</p> }
+  @if (!loading && users.length === 0) { <p class="muted">No accounts found.</p> }
+  @if (users.length > 0) {
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>User</th><th>Roles</th><th>Status</th><th>Account state</th></tr></thead>
+        <tbody>
+          @for (user of users; track user.userId) {
+            <tr>
+              <td><strong>{{ user.fullName }}</strong><small>{{ user.email }}</small></td>
+              <td>{{ user.roles.join(', ') || 'No roles' }}</td>
+              <td><span class="status" [class.inactive]="user.accountStatus !== 'ACTIVE'">{{ user.accountStatus }}</span></td>
+              <td>
+                <select [name]="'status-' + user.userId" [ngModel]="user.accountStatus"
+                  (ngModelChange)="changeStatus(user, $event)" aria-label="Account status">
+                  <option value="ACTIVE">Active</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="DEACTIVATED">Deactivated</option>
+                </select>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

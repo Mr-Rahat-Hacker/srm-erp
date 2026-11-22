@@ -14,7 +14,9 @@ import { NotificationsComponent } from './features/notifications/notifications.c
 import { ReportsComponent } from './features/reports/reports.component';
 import { LoginComponent } from './features/auth/login.component';
 import { SupplierRegistrationComponent } from './features/auth/supplier-registration.component';
+import { AdminUsersComponent } from './features/admin-users/admin-users.component';
 import { authGuard } from './core/auth/auth.guard';
+import { superAdminGuard } from './core/auth/super-admin.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -33,5 +35,6 @@ export const routes: Routes = [
   { path: 'audit', component: AuditComponent, canActivate: [authGuard] },
   { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
   { path: 'reports', component: ReportsComponent, canActivate: [authGuard] },
+  { path: 'admin/users', component: AdminUsersComponent, canActivate: [authGuard, superAdminGuard] },
   { path: '**', redirectTo: 'dashboard' },
 ];
