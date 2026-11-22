@@ -189,6 +189,49 @@ public class SupplierQuotationService {
         return response(access, userId);
     }
 
+    @Transactional
+    public SupplierRfqResponse withdraw(UUID rfqId, UUID userId, QuotationWithdrawalRequest request) {
+        RfqAccess access = requireAccess(rfqId, userId);
+        ensureBeforeDeadline(access);
+        QuotationHeader quotation = jdbc.queryForObject("""
+                SELECT quotation_id, lifecycle_status FROM srm.quotation
+                WHERE rfq_id = ? AND supplier_id = ? FOR UPDATE
+                """, (rs, row) -> new QuotationHeader(
+                rs.getObject("quotation_id", UUID.class), rs.getString("lifecycle_status")),
+                rfqId, access.supplierId());
+
+        List<VersionHeader> latest = jdbc.query("""
+                SELECT quotation_version_id, version_number, version_status
+                FROM srm.quotation_version WHERE quotation_id = ?
+                ORDER BY version_number DESC LIMIT 1 FOR UPDATE
+                """, (rs, row) -> new VersionHeader(
+                rs.getObject("quotation_version_id", UUID.class), rs.getInt("version_number"),
+                rs.getString("version_status")), quotation.quotationId());
+        if (latest.isEmpty() || !"SUBMITTED".equals(latest.getFirst().status())) {
+            throw new ResponseStatusException(CONFLICT, "Only the current submitted quotation can be withdrawn");
+        }
+
+        VersionHeader submitted = latest.getFirst();
+        int updated = jdbc.update("""
+                UPDATE srm.quotation_version SET version_status = 'WITHDRAWN'
+                WHERE quotation_version_id = ? AND version_status = 'SUBMITTED'
+                """, submitted.versionId());
+        if (updated != 1) {
+            throw new ResponseStatusException(CONFLICT, "Quotation changed; refresh and retry");
+        }
+        jdbc.update("UPDATE srm.quotation SET lifecycle_status = 'WITHDRAWN' WHERE quotation_id = ?",
+                quotation.quotationId());
+        jdbc.update("""
+                INSERT INTO srm.audit_event
+                    (actor_user_id, actor_type, action_code, entity_type, entity_id, supplier_id,
+                     rfq_id, quotation_id, outcome, changed_fields)
+                VALUES (?, 'SUPPLIER_USER', 'QUOTATION_WITHDRAWN', 'QUOTATION', ?, ?, ?, ?, 'SUCCESS',
+                        jsonb_build_object('version_number', ?, 'reason', ?))
+                """, userId, quotation.quotationId(), access.supplierId(), rfqId, quotation.quotationId(),
+                submitted.versionNumber(), request.reason().trim());
+        return response(access, userId);
+    }
+
     private RfqAccess requireAccess(UUID rfqId, UUID userId) {
         List<RfqAccess> rows = jdbc.query("""
                 SELECT r.rfq_id, r.rfq_number, r.title, r.description, r.currency_code,
