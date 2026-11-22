@@ -42,6 +42,8 @@ input::placeholder, textarea::placeholder { color: #a5b0bc; }
 .lifecycle-remarks textarea { margin-top: 1px; }
 .lifecycle-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .lifecycle-help { margin-top: 12px; }
+.mapping-editor { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e6ebf1; }
+.mapping-editor h4 { margin: 0 0 13px; color: #30465e; font-size: 12px; }
 .text-button { padding: 5px 8px; border: 0; background: transparent; color: #315c80; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 .empty-state { display: grid; justify-items: center; gap: 8px; padding: 42px 15px; color: #6f8093; text-align: center; font-size: 12px; }
 .empty-state strong { color: #30465e; font-size: 14px; }
