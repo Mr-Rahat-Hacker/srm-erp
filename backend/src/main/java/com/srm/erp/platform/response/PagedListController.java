@@ -30,11 +30,11 @@ public class PagedListController {
             @RequestParam(defaultValue = "") String status) {
         validate(page, size);
         String term = contains(q);
-        String lifecycle = blankToNull(status);
+        String lifecycle = status == null ? "" : status.trim();
         String where = """
                 WHERE (? = '' OR s.legal_name ILIKE ? OR COALESCE(s.trade_name, '') ILIKE ?
                     OR s.supplier_number ILIKE ? OR COALESCE(c.email, '') ILIKE ?)
-                  AND (? IS NULL OR s.lifecycle_status = ?)
+                  AND (? = '' OR s.lifecycle_status = ?)
                 """;
         Long total = jdbc.queryForObject("""
                 SELECT count(*) FROM srm.supplier_organization s
@@ -81,7 +81,7 @@ public class PagedListController {
         String where = """
                 WHERE (? = false OR r.buyer_user_id = ?)
                   AND (? = '' OR r.rfq_number ILIKE ? OR r.title ILIKE ?)
-                  AND (? IS NULL OR r.status = ?)
+                  AND (? = '' OR r.status = ?)
                 """;
         Object[] filterArgs = {buyerOnly, actorId, q.trim(), term, term, lifecycle, lifecycle};
         Long total = jdbc.queryForObject("""
@@ -116,7 +116,4 @@ public class PagedListController {
         return "%" + value.trim().replace("%", "\\%").replace("_", "\\_") + "%";
     }
 
-    private String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
 }
