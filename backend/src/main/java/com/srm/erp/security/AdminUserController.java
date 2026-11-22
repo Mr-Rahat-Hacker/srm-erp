@@ -26,8 +26,14 @@ public class AdminUserController {
 
     @PostMapping
     public ApiResponse<AdminUserService.AdminUser> create(@Valid @RequestBody CreateUserRequest request) {
-        UUID actorId = currentActor();
-        return ApiResponse.success("User created successfully", users.create(request, actorId));
+        return ApiResponse.success("User created successfully", users.create(request, currentActor()));
+    }
+
+    @PatchMapping("/{userId}/roles")
+    public ApiResponse<AdminUserService.AdminUser> updateRoles(
+            @PathVariable UUID userId, @Valid @RequestBody UpdateUserRolesRequest request) {
+        return ApiResponse.success("User roles updated successfully",
+                users.updateRoles(userId, request.roles(), currentActor()));
     }
 
     @PatchMapping("/{userId}/status")
@@ -47,6 +53,11 @@ public class AdminUserController {
             @jakarta.validation.constraints.Size(max = 254) String email,
             @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(min = 12, max = 128)
             String password,
+            @jakarta.validation.constraints.NotEmpty List<@jakarta.validation.constraints.Pattern(
+                    regexp = "^(SUPER_ADMIN|SRM_ADMIN|SUPPLIER_VERIFIER|PROCUREMENT_BUYER|PROCUREMENT_APPROVER|AUDITOR)$")
+                    String> roles) {}
+
+    public record UpdateUserRolesRequest(
             @jakarta.validation.constraints.NotEmpty List<@jakarta.validation.constraints.Pattern(
                     regexp = "^(SUPER_ADMIN|SRM_ADMIN|SUPPLIER_VERIFIER|PROCUREMENT_BUYER|PROCUREMENT_APPROVER|AUDITOR)$")
                     String> roles) {}

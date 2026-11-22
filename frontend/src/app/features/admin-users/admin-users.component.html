@@ -47,12 +47,31 @@
   @if (users.length > 0) {
     <div class="table-wrap">
       <table>
-        <thead><tr><th>User</th><th>Roles</th><th>Status</th><th>Account state</th></tr></thead>
+        <thead><tr><th>User</th><th>Role assignments</th><th>Status</th><th>Account state</th></tr></thead>
         <tbody>
           @for (user of users; track user.userId) {
             <tr>
               <td><strong>{{ user.fullName }}</strong><small>{{ user.email }}</small></td>
-              <td>{{ user.roles.join(', ') || 'No roles' }}</td>
+              <td>
+                @if (user.roles.includes('SUPPLIER_USER')) {
+                  <span>SUPPLIER_USER · managed by supplier membership</span>
+                } @else {
+                  <div class="role-editor">
+                    @for (role of roles; track role) {
+                      <label class="role-option">
+                        <input type="checkbox" [checked]="rolesDraft[user.userId]?.includes(role) ?? false"
+                          (change)="toggleUserRole(user.userId, role, $any($event.target).checked)">
+                        {{ role.replaceAll('_', ' ') }}
+                      </label>
+                    }
+                  </div>
+                  <button type="button" class="secondary save-roles"
+                    [disabled]="savingUserId === user.userId || !rolesChanged(user)"
+                    (click)="saveRoles(user)">
+                    {{ savingUserId === user.userId ? 'Saving…' : 'Save roles' }}
+                  </button>
+                }
+              </td>
               <td><span class="status" [class.inactive]="user.accountStatus !== 'ACTIVE'">{{ user.accountStatus }}</span></td>
               <td>
                 <select [name]="'status-' + user.userId" [ngModel]="user.accountStatus"

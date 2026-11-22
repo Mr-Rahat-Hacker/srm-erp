@@ -16,6 +16,10 @@ export class AdminUserService {
     return this.http.post<ApiResponse<AdminUser>>(this.endpoint, payload);
   }
 
+  updateRoles(userId: string, roles: string[]): Observable<ApiResponse<AdminUser>> {
+    return this.http.patch<ApiResponse<AdminUser>>(`${this.endpoint}/${userId}/roles`, { roles });
+  }
+
   updateStatus(userId: string, accountStatus: AdminUser['accountStatus']): Observable<ApiResponse<AdminUser>> {
     return this.http.patch<ApiResponse<AdminUser>>(
       `${this.endpoint}/${userId}/status`, { accountStatus },

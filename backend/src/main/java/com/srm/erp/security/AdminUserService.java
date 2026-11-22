@@ -35,9 +35,8 @@ public class AdminUserService {
                 LEFT JOIN srm.role r ON r.role_id = ur.role_id
                 GROUP BY u.user_id
                 ORDER BY lower(u.email)
-                """, (rs, row) -> new AdminUser(rs.getObject("user_id", UUID.class),
-                rs.getString("email"), rs.getString("full_name"), rs.getString("account_status"),
-                rs.getString("roles").isBlank() ? List.of() : List.of(rs.getString("roles").split(","))));
+                """, (rs, row) -> mapUser(rs.getObject("user_id", UUID.class), rs.getString("email"),
+                rs.getString("full_name"), rs.getString("account_status"), rs.getString("roles")));
     }
 
     @Transactional
@@ -55,10 +54,7 @@ public class AdminUserService {
             throw new ResponseStatusException(CONFLICT, "An account with this email already exists");
         }
 
-        List<String> roles = request.roles().stream().map(role -> role.trim().toUpperCase(Locale.ROOT))
-                .distinct().sorted().toList();
-        if (roles.isEmpty()) throw new ResponseStatusException(BAD_REQUEST, "At least one role is required");
-
+        List<String> roles = normalizeRoles(request.roles());
         UUID userId;
         try {
             userId = jdbc.queryForObject("""
@@ -70,11 +66,8 @@ public class AdminUserService {
         }
 
         for (String role : roles) {
-            List<UUID> roleIds = jdbc.query("SELECT role_id FROM srm.role WHERE role_code = ?",
-                    (rs, row) -> rs.getObject(1, UUID.class), role);
-            if (roleIds.isEmpty()) throw new ResponseStatusException(BAD_REQUEST, "Unknown role: " + role);
             jdbc.update("INSERT INTO srm.user_role (user_id, role_id, assigned_by) VALUES (?, ?, ?)",
-                    userId, roleIds.getFirst(), actorId);
+                    userId, roleId(role), actorId);
         }
 
         jdbc.update("""
@@ -89,6 +82,45 @@ public class AdminUserService {
     }
 
     @Transactional
+    public AdminUser updateRoles(UUID userId, List<String> requestedRoles, UUID actorId) {
+        List<String> roles = normalizeRoles(requestedRoles);
+        if (roles.contains("SUPPLIER_USER")) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "Supplier roles are managed through supplier membership, not internal user administration");
+        }
+
+        lockSuperAdminGovernance();
+        AdminUser target = findById(userId);
+        if (target.roles().contains("SUPPLIER_USER")) {
+            throw new ResponseStatusException(CONFLICT,
+                    "Supplier accounts cannot be changed through internal user administration");
+        }
+        if (userId.equals(actorId) && !roles.contains("SUPER_ADMIN")) {
+            throw new ResponseStatusException(CONFLICT, "You cannot remove your own Super Admin role");
+        }
+        if ("ACTIVE".equals(target.accountStatus()) && target.roles().contains("SUPER_ADMIN")
+                && !roles.contains("SUPER_ADMIN")) {
+            ensureAnotherActiveSuperAdmin(userId);
+        }
+        if (target.roles().equals(roles)) return target;
+
+        List<UUID> roleIds = roles.stream().map(this::roleId).toList();
+        jdbc.update("DELETE FROM srm.user_role WHERE user_id = ?", userId);
+        for (UUID roleId : roleIds) {
+            jdbc.update("INSERT INTO srm.user_role (user_id, role_id, assigned_by) VALUES (?, ?, ?)",
+                    userId, roleId, actorId);
+        }
+        jdbc.update("""
+                INSERT INTO srm.audit_event
+                    (actor_user_id, actor_type, action_code, entity_type, entity_id,
+                     outcome, changed_fields)
+                VALUES (?, 'SUPER_ADMIN', 'USER_ROLES_CHANGED', 'USER', ?, 'SUCCESS',
+                        jsonb_build_object('roles', jsonb_build_object('old', ?, 'new', ?)))
+                """, actorId, userId, String.join(",", target.roles()), String.join(",", roles));
+        return findById(userId);
+    }
+
+    @Transactional
     public AdminUser updateStatus(UUID userId, String accountStatus, UUID actorId) {
         String next = accountStatus == null ? "" : accountStatus.trim().toUpperCase(Locale.ROOT);
         if (!List.of("ACTIVE", "SUSPENDED", "DEACTIVATED").contains(next)) {
@@ -98,12 +130,13 @@ public class AdminUserService {
             throw new ResponseStatusException(CONFLICT, "You cannot suspend or deactivate your own account");
         }
 
-        List<String> currentStatuses = jdbc.query(
-                "SELECT account_status FROM srm.app_user WHERE user_id = ?",
-                (rs, row) -> rs.getString(1), userId);
-        if (currentStatuses.isEmpty()) throw new ResponseStatusException(NOT_FOUND, "User not found");
-        String previous = currentStatuses.getFirst();
-        if (previous.equals(next)) return findById(userId);
+        lockSuperAdminGovernance();
+        AdminUser target = findById(userId);
+        String previous = target.accountStatus();
+        if (previous.equals(next)) return target;
+        if ("ACTIVE".equals(previous) && !"ACTIVE".equals(next) && target.roles().contains("SUPER_ADMIN")) {
+            ensureAnotherActiveSuperAdmin(userId);
+        }
 
         jdbc.update("UPDATE srm.app_user SET account_status = ?, updated_at = now() WHERE user_id = ?",
                 next, userId);
@@ -117,6 +150,41 @@ public class AdminUserService {
         return findById(userId);
     }
 
+    private void lockSuperAdminGovernance() {
+        jdbc.execute("SELECT pg_advisory_xact_lock(741125, 1)");
+    }
+
+    private UUID roleId(String role) {
+        List<UUID> roleIds = jdbc.query("SELECT role_id FROM srm.role WHERE role_code = ?",
+                (rs, row) -> rs.getObject(1, UUID.class), role);
+        if (roleIds.isEmpty()) throw new ResponseStatusException(BAD_REQUEST, "Unknown role: " + role);
+        return roleIds.getFirst();
+    }
+
+    private List<String> normalizeRoles(List<String> requested) {
+        if (requested == null || requested.isEmpty()) {
+            throw new ResponseStatusException(BAD_REQUEST, "At least one role is required");
+        }
+        List<String> roles = requested.stream().map(role -> role.trim().toUpperCase(Locale.ROOT))
+                .distinct().sorted().toList();
+        if (roles.isEmpty()) throw new ResponseStatusException(BAD_REQUEST, "At least one role is required");
+        return roles;
+    }
+
+    private void ensureAnotherActiveSuperAdmin(UUID excludedUserId) {
+        Long count = jdbc.queryForObject("""
+                SELECT count(DISTINCT u.user_id)
+                FROM srm.app_user u
+                JOIN srm.user_role ur ON ur.user_id = u.user_id
+                JOIN srm.role r ON r.role_id = ur.role_id
+                WHERE u.account_status = 'ACTIVE' AND u.user_id <> ? AND r.role_code = 'SUPER_ADMIN'
+                """, Long.class, excludedUserId);
+        if (count == null || count == 0) {
+            throw new ResponseStatusException(CONFLICT,
+                    "At least one other active Super Admin must remain");
+        }
+    }
+
     private AdminUser findById(UUID userId) {
         List<AdminUser> users = jdbc.query("""
                 SELECT u.user_id, u.email, u.full_name, u.account_status,
@@ -126,11 +194,16 @@ public class AdminUserService {
                 LEFT JOIN srm.role r ON r.role_id = ur.role_id
                 WHERE u.user_id = ?
                 GROUP BY u.user_id
-                """, (rs, row) -> new AdminUser(rs.getObject("user_id", UUID.class),
-                rs.getString("email"), rs.getString("full_name"), rs.getString("account_status"),
-                rs.getString("roles").isBlank() ? List.of() : List.of(rs.getString("roles").split(","))), userId);
+                """, (rs, row) -> mapUser(rs.getObject("user_id", UUID.class), rs.getString("email"),
+                rs.getString("full_name"), rs.getString("account_status"), rs.getString("roles")), userId);
         if (users.isEmpty()) throw new ResponseStatusException(NOT_FOUND, "User not found");
         return users.getFirst();
+    }
+
+    private AdminUser mapUser(UUID userId, String email, String fullName, String accountStatus, String roleCsv) {
+        List<String> roles = roleCsv == null || roleCsv.isBlank()
+                ? List.of() : List.of(roleCsv.split(","));
+        return new AdminUser(userId, email, fullName, accountStatus, roles);
     }
 
     public record AdminUser(UUID userId, String email, String fullName, String accountStatus, List<String> roles) {}
