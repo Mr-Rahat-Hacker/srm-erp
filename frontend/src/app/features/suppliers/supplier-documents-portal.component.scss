@@ -7,3 +7,11 @@ h1 { margin:8px 0 5px; color:#17263b; font-size:clamp(27px,3vw,36px); letter-spa
 .profile-select select { min-height:36px; padding:7px 9px; border:1px solid #dfe6ed; border-radius:6px; background:#fff; color:#30465e; font:inherit; }
 .notice,.empty-state { margin-bottom:12px; padding:14px; border:1px solid #e6ebf1; border-radius:8px; background:#fff; color:#78889b; font-size:11px; }
 .notice.error { border-color:#f0d4d2; background:#fff1f0; color:#a13d36; }
+
+.notice.success { border-color:#cbe7d4; background:#edf8f1; color:#267447; }
+.profile-status { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; padding:13px; border:1px solid #e6ebf1; border-radius:8px; background:#fff; }
+.profile-status span,.profile-status strong { display:block; }
+.profile-status span { color:#8795a5; font-size:9px; }
+.profile-status strong { margin-top:4px; color:#30465e; font-size:12px; }
+.profile-status button { min-height:36px; padding:0 12px; border:0; border-radius:6px; background:#183b5d; color:#fff; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
+.profile-status button:disabled { opacity:.55; cursor:not-allowed; }
