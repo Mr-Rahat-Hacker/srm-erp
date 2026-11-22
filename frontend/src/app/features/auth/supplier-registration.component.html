@@ -1,0 +1,79 @@
+<section class="registration-wrap">
+  <div class="registration-card">
+    <p class="eyebrow">SUPPLIER RELATIONSHIP MANAGEMENT</p>
+    <h1>Create a supplier account</h1>
+    <p class="intro">Register your organization and create its first supplier-user login. Your profile starts in draft until submitted for verification.</p>
+    @if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+    @if (successMessage) {
+      <div class="notice success" role="status">
+        {{ successMessage }} <a routerLink="/login">Sign in</a>
+      </div>
+    }
+
+    <form #registrationForm="ngForm" (ngSubmit)="submit()">
+      <h2>Organization</h2>
+      <label>Legal company name <span>*</span>
+        <input name="legalName" [(ngModel)]="form.legalName" required maxlength="200">
+      </label>
+      <label>Trade name
+        <input name="tradeName" [(ngModel)]="form.tradeName" maxlength="200">
+      </label>
+      <div class="two-columns">
+        <label>GSTIN
+          <input name="gstin" [(ngModel)]="form.gstin" maxlength="15">
+        </label>
+        <label>PAN
+          <input name="pan" [(ngModel)]="form.pan" maxlength="10">
+        </label>
+      </div>
+
+      <h2>Account contact</h2>
+      <label>Contact person <span>*</span>
+        <input name="contactName" [(ngModel)]="form.contactName" required maxlength="160">
+      </label>
+      <label>Email address <span>*</span>
+        <input name="email" [(ngModel)]="form.email" required email type="email" maxlength="254" autocomplete="username">
+      </label>
+      <label>Phone number
+        <input name="phone" [(ngModel)]="form.phone" maxlength="40">
+      </label>
+
+      <h2>Account password</h2>
+      <label>Password <span>*</span>
+        <input name="password" [(ngModel)]="form.password" required minlength="12" maxlength="72"
+          type="password" autocomplete="new-password">
+        <small>Use at least 12 characters.</small>
+      </label>
+      <label>Confirm password <span>*</span>
+        <input name="passwordConfirmation" [(ngModel)]="passwordConfirmation" required minlength="12" maxlength="72"
+          type="password" autocomplete="new-password">
+      </label>
+
+      <details>
+        <summary>Registered address (optional)</summary>
+        <label>Address line
+          <input name="addressLine1" [(ngModel)]="form.addressLine1" maxlength="200">
+        </label>
+        <div class="two-columns">
+          <label>City
+            <input name="city" [(ngModel)]="form.city" maxlength="100">
+          </label>
+          <label>State
+            <input name="stateRegion" [(ngModel)]="form.stateRegion" maxlength="100">
+          </label>
+          <label>Postal code
+            <input name="postalCode" [(ngModel)]="form.postalCode" maxlength="20">
+          </label>
+          <label>Country code
+            <input name="countryCode" [(ngModel)]="form.countryCode" minlength="2" maxlength="2">
+          </label>
+        </div>
+      </details>
+
+      <button type="submit" [disabled]="registrationForm.invalid || loading || form.password !== passwordConfirmation">
+        {{ loading ? 'Creating account…' : 'Create supplier account' }}
+      </button>
+    </form>
+    <p class="login-link">Already registered? <a routerLink="/login">Sign in</a></p>
+  </div>
+</section>
