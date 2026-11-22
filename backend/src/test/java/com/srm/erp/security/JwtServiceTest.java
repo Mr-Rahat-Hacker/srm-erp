@@ -25,7 +25,8 @@ class JwtServiceTest {
 
     @Test
     void productionProfileRequiresConfiguredSigningKey() {
-        MockEnvironment environment = new MockEnvironment().setActiveProfiles("prod");
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("prod");
 
         IllegalStateException error = assertThrows(IllegalStateException.class,
                 () -> new JwtService("", 300, environment));
