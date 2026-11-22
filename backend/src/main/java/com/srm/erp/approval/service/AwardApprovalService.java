@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,7 +70,7 @@ public class AwardApprovalService {
             throw new ResponseStatusException(BAD_REQUEST, "Select a recommendation and an approval route");
         }
         List<UUID> approverIds = resolveApproverIds(request);
-        if (approverIds.isEmpty() || approverIds.size() > 10 || approverIds.contains(null)
+        if (approverIds.isEmpty() || approverIds.size() > 10 || approverIds.stream().anyMatch(Objects::isNull)
                 || new HashSet<>(approverIds).size() != approverIds.size()) {
             throw new ResponseStatusException(BAD_REQUEST, "Choose 1 to 10 distinct approval stages");
         }
