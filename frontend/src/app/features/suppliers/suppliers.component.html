@@ -235,6 +235,12 @@
     <span class="record-count">{{ suppliers.length }} records</span>
   </div>
 
+  <div class="list-filters">
+    <label>Search suppliers <input name="supplierSearch" [(ngModel)]="searchText" (keyup.enter)="applySupplierFilters()" placeholder="Name, number, or email"></label>
+    <label>Status <select name="supplierStatus" [(ngModel)]="statusFilter" (ngModelChange)="applySupplierFilters()"><option value="">All statuses</option><option>DRAFT</option><option>SUBMITTED</option><option>UNDER_REVIEW</option><option>CORRECTION_REQUIRED</option><option>APPROVED</option><option>REJECTED</option><option>ACTIVE</option><option>SUSPENDED</option></select></label>
+    <button class="secondary-button" type="button" (click)="applySupplierFilters()" [disabled]="loading">Search</button>
+  </div>
+
   @if (loading) {
     <p class="empty-state">Loading supplier records…</p>
   } @else if (suppliers.length === 0) {
@@ -266,4 +272,9 @@
       </table>
     </div>
   }
+  <div class="pagination-controls" aria-label="Supplier pages">
+    <span>{{ totalElements }} supplier records · Page {{ page + 1 }} of {{ totalPages || 1 }}</span>
+    <div><button class="secondary-button" type="button" (click)="changeSupplierPage(-1)" [disabled]="loading || page === 0">Previous</button>
+    <button class="secondary-button" type="button" (click)="changeSupplierPage(1)" [disabled]="loading || page + 1 >= totalPages">Next</button></div>
+  </div>
 </section>

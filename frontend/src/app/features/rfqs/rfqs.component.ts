@@ -24,6 +24,12 @@ export class RfqsComponent implements OnInit {
   }
 
   protected rfqs: RfqSummary[] = [];
+  protected page = 0;
+  protected pageSize = 25;
+  protected totalElements = 0;
+  protected totalPages = 0;
+  protected searchText = '';
+  protected statusFilter = '';
   protected suppliers: Supplier[] = [];
   protected selectedRfq: Rfq | null = null;
   protected selectedSupplierIds: string[] = [];
@@ -52,9 +58,11 @@ export class RfqsComponent implements OnInit {
   protected loadRfqs(): void {
     this.loading = true;
     this.errorMessage = '';
-    this.rfqService.getRfqs().subscribe({
+    this.rfqService.getRfqs(this.page, this.pageSize, this.searchText, this.statusFilter).subscribe({
       next: (response) => {
-        this.rfqs = response.data ?? [];
+        this.rfqs = response.data?.items ?? [];
+        this.totalElements = response.data?.totalElements ?? 0;
+        this.totalPages = response.data?.totalPages ?? 0;
         this.loading = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -64,6 +72,18 @@ export class RfqsComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  protected applyRfqFilters(): void {
+    this.page = 0;
+    this.loadRfqs();
+  }
+
+  protected changeRfqPage(delta: number): void {
+    const next = this.page + delta;
+    if (next < 0 || next >= this.totalPages) return;
+    this.page = next;
+    this.loadRfqs();
   }
 
   protected loadSuppliers(): void {
