@@ -19,5 +19,13 @@ public record SupplierRegistrationRequest(
         @Size(max = 100) String city,
         @Size(max = 100) String stateRegion,
         @Size(max = 20) String postalCode,
-        @Size(min = 2, max = 2) String countryCode
-) {}
+        @Size(min = 2, max = 2) String countryCode,
+        @Size(max = 128) String password
+) {
+    public SupplierRegistrationRequest(String legalName, String tradeName, String gstin, String pan,
+                                       String contactName, String email, String phone, String addressLine1,
+                                       String city, String stateRegion, String postalCode, String countryCode) {
+        this(legalName, tradeName, gstin, pan, contactName, email, phone, addressLine1, city,
+                stateRegion, postalCode, countryCode, null);
+    }
+}
