@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <section class="login-wrap">
       <form class="login-card" (ngSubmit)="submit()">
@@ -26,7 +27,7 @@ import { AuthService } from '../../core/auth/auth.service';
         <button type="submit" [disabled]="loading || !email || !password">
           {{ loading ? 'Signing in…' : 'Sign in' }}
         </button>
-        <p class="help">Account access is provided by your SRM administrator.</p>
+        <p class="help">Need a supplier account? <a routerLink="/register">Create one</a>.</p>
       </form>
     </section>
   `,
