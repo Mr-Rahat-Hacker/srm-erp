@@ -115,7 +115,7 @@
         </article>
       }
     }
-    @if (policies.some(policy => policy.active)) {
+    @if (hasActivePolicies) {
       <label class="deactivation-reason">Reason for policy deactivation
         <input name="deactivateReason" [(ngModel)]="deactivateReason" maxlength="500"
           placeholder="Required to deactivate a policy">
