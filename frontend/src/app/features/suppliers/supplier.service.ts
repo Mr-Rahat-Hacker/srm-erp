@@ -36,6 +36,12 @@ export class SupplierService {
     return this.http.post<ApiResponse<Supplier>>(`${API_BASE_URL}/supplier/register`, payload);
   }
 
+  submitMySupplierProfile(supplierId: string): Observable<ApiResponse<SupplierLifecycleResult>> {
+    return this.http.post<ApiResponse<SupplierLifecycleResult>>(
+      `${API_BASE_URL}/supplier/profiles/${supplierId}/submit`, {},
+    );
+  }
+
   submitSupplier(supplierId: string): Observable<ApiResponse<SupplierLifecycleResult>> {
     return this.http.post<ApiResponse<SupplierLifecycleResult>>(
       `${API_BASE_URL}/suppliers/${supplierId}/submit`,
