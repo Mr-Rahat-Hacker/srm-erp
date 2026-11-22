@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +35,7 @@ class AuthControllerTest {
         when(encoder.matches("correct password", "encoded-password")).thenReturn(true);
 
         JwtService jwt = new JwtService(
-                "this-is-a-long-test-secret-with-over-32-bytes", 240);
+                "this-is-a-long-test-secret-with-over-32-bytes", 240, new MockEnvironment());
         AuthController controller = new AuthController(jdbc, encoder, jwt);
 
         ApiResponse<AuthController.LoginResponse> response =
