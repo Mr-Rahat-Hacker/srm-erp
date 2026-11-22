@@ -66,9 +66,8 @@ public class AdminUserService {
         }
 
         for (String role : roles) {
-            UUID roleId = roleId(role);
             jdbc.update("INSERT INTO srm.user_role (user_id, role_id, assigned_by) VALUES (?, ?, ?)",
-                    userId, roleId, actorId);
+                    userId, roleId(role), actorId);
         }
 
         jdbc.update("""
@@ -90,6 +89,7 @@ public class AdminUserService {
                     "Supplier roles are managed through supplier membership, not internal user administration");
         }
 
+        lockSuperAdminGovernance();
         AdminUser target = findById(userId);
         if (target.roles().contains("SUPPLIER_USER")) {
             throw new ResponseStatusException(CONFLICT,
@@ -130,6 +130,7 @@ public class AdminUserService {
             throw new ResponseStatusException(CONFLICT, "You cannot suspend or deactivate your own account");
         }
 
+        lockSuperAdminGovernance();
         AdminUser target = findById(userId);
         String previous = target.accountStatus();
         if (previous.equals(next)) return target;
@@ -147,6 +148,10 @@ public class AdminUserService {
                         jsonb_build_object('account_status', jsonb_build_object('old', ?, 'new', ?)))
                 """, actorId, userId, previous, next);
         return findById(userId);
+    }
+
+    private void lockSuperAdminGovernance() {
+        jdbc.execute("SELECT pg_advisory_xact_lock(741125, 1)");
     }
 
     private UUID roleId(String role) {
