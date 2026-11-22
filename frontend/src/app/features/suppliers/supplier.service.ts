@@ -8,6 +8,7 @@ import {
   SupplierLifecycleResult,
   SupplierRegistration,
   SupplierAccountRegistration,
+  SupplierProfileUpdate,
 } from './supplier.models';
 
 const API_BASE_URL = '/api/v1';
@@ -34,6 +35,10 @@ export class SupplierService {
 
   registerSupplierAccount(payload: SupplierAccountRegistration): Observable<ApiResponse<Supplier>> {
     return this.http.post<ApiResponse<Supplier>>(`${API_BASE_URL}/supplier/register`, payload);
+  }
+
+  updateMySupplierProfile(supplierId: string, payload: SupplierProfileUpdate): Observable<ApiResponse<Supplier>> {
+    return this.http.patch<ApiResponse<Supplier>>(`${API_BASE_URL}/supplier/profiles/${supplierId}`, payload);
   }
 
   submitMySupplierProfile(supplierId: string): Observable<ApiResponse<SupplierLifecycleResult>> {
