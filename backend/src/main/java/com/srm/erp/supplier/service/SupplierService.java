@@ -89,6 +89,20 @@ public class SupplierService {
                 """, supplierMapper, supplierId);
     }
 
+    public List<SupplierResponse> findForUser(UUID userId) {
+        return jdbc.query("""
+                SELECT s.supplier_id, s.supplier_number, s.legal_name, s.trade_name,
+                       s.gstin, s.pan, s.lifecycle_status, s.created_at,
+                       c.full_name AS contact_name, c.email, c.phone
+                FROM srm.supplier_user_membership m
+                JOIN srm.supplier_organization s ON s.supplier_id = m.supplier_id
+                LEFT JOIN srm.supplier_contact c
+                  ON c.supplier_id = s.supplier_id AND c.contact_type = 'PRIMARY'
+                WHERE m.user_id = ? AND m.membership_status = 'ACTIVE'
+                ORDER BY s.legal_name
+                """, supplierMapper, userId);
+    }
+
     private SupplierResponse mapSupplier(ResultSet rs, int rowNum) throws SQLException {
         return new SupplierResponse(
                 rs.getObject("supplier_id", UUID.class),

@@ -1,0 +1,25 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SUPPLIER PORTAL / DOCUMENTS</span>
+    <h1>Company documents</h1>
+    <p>Upload and review your organization’s compliance documents and their verification status.</p>
+  </div>
+</div>
+
+@if (errorMessage) { <div class="notice error" role="alert">{{ errorMessage }}</div> }
+@if (loading) { <div class="notice" role="status">Loading supplier profiles…</div> }
+@if (!loading && profiles.length === 0) {
+  <section class="empty-state">No active supplier organization is linked to this account. Contact your supplier administrator.</section>
+}
+@if (profiles.length > 1) {
+  <label class="profile-select">Supplier organization
+    <select name="supplierId" [(ngModel)]="selectedSupplierId">
+      @for (profile of profiles; track profile.supplierId) {
+        <option [value]="profile.supplierId">{{ profile.legalName }} · {{ profile.supplierNumber }}</option>
+      }
+    </select>
+  </label>
+}
+@if (selectedSupplierId) {
+  <app-supplier-documents [supplierId]="selectedSupplierId" />
+}

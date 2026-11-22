@@ -29,7 +29,7 @@ public class SupplierDocumentController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('SRM_ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SRM_ADMIN','SUPER_ADMIN','SUPPLIER_USER')")
     public ApiResponse<SupplierDocumentResponse> upload(
             @PathVariable UUID supplierId,
             @RequestParam String documentType,
@@ -38,8 +38,11 @@ public class SupplierDocumentController {
         String key = storage.store(file);
         try {
             return ApiResponse.success("Supplier document uploaded for verification",
-                    documents.upload(supplierId, currentActor(), documentType, file.getOriginalFilename(),
-                            file.getContentType(), key, expiryDate));
+                    isSupplierUser()
+                            ? documents.uploadForSupplierUser(supplierId, currentActor(), documentType,
+                                    file.getOriginalFilename(), file.getContentType(), key, expiryDate)
+                            : documents.upload(supplierId, currentActor(), documentType, file.getOriginalFilename(),
+                                    file.getContentType(), key, expiryDate));
         } catch (RuntimeException exception) {
             storage.deleteQuietly(key);
             throw exception;
@@ -47,16 +50,20 @@ public class SupplierDocumentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
+    @PreAuthorize("hasAnyRole('SUPPLIER_USER','SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
     public ApiResponse<List<SupplierDocumentResponse>> list(@PathVariable UUID supplierId) {
-        return ApiResponse.success("Supplier documents retrieved successfully", documents.findAll(supplierId));
+        return ApiResponse.success("Supplier documents retrieved successfully", isSupplierUser()
+                        ? documents.findAllForSupplierUser(supplierId, currentActor())
+                        : documents.findAll(supplierId));
     }
 
     @GetMapping("/{documentId}/content")
-    @PreAuthorize("hasAnyRole('SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
+    @PreAuthorize("hasAnyRole('SUPPLIER_USER','SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN','AUDITOR')")
     public ResponseEntity<FileSystemResource> download(@PathVariable UUID supplierId,
                                                         @PathVariable UUID documentId) {
-        var file = documents.findFile(supplierId, documentId);
+        var file = isSupplierUser()
+                ? documents.findFileForSupplierUser(supplierId, documentId, currentActor())
+                : documents.findFile(supplierId, documentId);
         Path path = storage.resolve(file.storageKey());
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -72,6 +79,12 @@ public class SupplierDocumentController {
             @PathVariable UUID documentId, @Valid @RequestBody SupplierDocumentReviewRequest request) {
         return ApiResponse.success("Supplier document review recorded",
                 documents.review(supplierId, documentId, currentActor(), request.decision(), request.remarks()));
+    }
+
+    private boolean isSupplierUser() {
+        return org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_SUPPLIER_USER".equals(authority.getAuthority()));
     }
 
     private UUID currentActor() {

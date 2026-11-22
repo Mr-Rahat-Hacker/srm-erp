@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { SuppliersComponent } from './features/suppliers/suppliers.component';
+import { SupplierDocumentsPortalComponent } from './features/suppliers/supplier-documents-portal.component';
 import { RfqsComponent } from './features/rfqs/rfqs.component';
 import { SupplierQuotationsComponent } from './features/quotations/supplier-quotations.component';
 import { QuotationComparisonComponent } from './features/quotations/quotation-comparison.component';
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'rfqs', component: RfqsComponent, canActivate: [authGuard] },
   { path: 'supplier-portal/quotations', component: SupplierQuotationsComponent, canActivate: [authGuard] },
   { path: 'supplier-portal/negotiations', component: SupplierNegotiationsComponent, canActivate: [authGuard] },
+  { path: 'supplier-portal/documents', component: SupplierDocumentsPortalComponent, canActivate: [authGuard] },
   { path: 'quotations', component: QuotationComparisonComponent, canActivate: [authGuard] },
   { path: 'negotiations', component: BuyerNegotiationsComponent, canActivate: [authGuard] },
   { path: 'evaluations', component: EvaluationsComponent, canActivate: [authGuard] },

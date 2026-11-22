@@ -58,10 +58,30 @@ public class SupplierDocumentService {
                 INSERT INTO srm.audit_event
                     (actor_user_id, actor_type, action_code, entity_type, entity_id, supplier_id,
                      outcome, changed_fields)
-                VALUES (?, 'SRM_ADMIN', 'SUPPLIER_DOCUMENT_UPLOADED', 'SUPPLIER_DOCUMENT',
-                        ?, ?, 'SUCCESS', jsonb_build_object('document_type', ?, 'version_number', ?))
-                """, actorId, documentId, supplierId, type, version);
+                VALUES (?, CASE
+                            WHEN EXISTS (SELECT 1 FROM srm.user_role ur JOIN srm.role r ON r.role_id = ur.role_id
+                                         WHERE ur.user_id = ? AND r.role_code = 'SUPPLIER_USER')
+                            THEN 'SUPPLIER_USER' ELSE 'SRM_ADMIN' END,
+                        'SUPPLIER_DOCUMENT_UPLOADED', 'SUPPLIER_DOCUMENT', ?, ?, 'SUCCESS',
+                        jsonb_build_object('document_type', ?, 'version_number', ?))
+                """, actorId, actorId, documentId, supplierId, type, version);
         return findOne(supplierId, documentId);
+    }
+
+    @Transactional
+    public SupplierDocumentResponse uploadForSupplierUser(UUID supplierId, UUID actorId, String documentType,
+                                                          String filename, String contentType, String storageKey,
+                                                          LocalDate expiryDate) {
+        if (!hasActiveSupplierMembership(supplierId, actorId)) {
+            storage.deleteQuietly(storageKey);
+            throw new ResponseStatusException(NOT_FOUND, "Supplier not found");
+        }
+        return upload(supplierId, actorId, documentType, filename, contentType, storageKey, expiryDate);
+    }
+
+    public List<SupplierDocumentResponse> findAllForSupplierUser(UUID supplierId, UUID actorId) {
+        requireActiveSupplierMembership(supplierId, actorId);
+        return findAll(supplierId);
     }
 
     public List<SupplierDocumentResponse> findAll(UUID supplierId) {
@@ -87,6 +107,11 @@ public class SupplierDocumentService {
         }, supplierId, documentId);
     }
 
+    public DocumentFile findFileForSupplierUser(UUID supplierId, UUID documentId, UUID actorId) {
+        requireActiveSupplierMembership(supplierId, actorId);
+        return findFile(supplierId, documentId);
+    }
+
     @Transactional
     public SupplierDocumentResponse review(UUID supplierId, UUID documentId, UUID actorId,
                                            String decision, String remarks) {
@@ -110,9 +135,12 @@ public class SupplierDocumentService {
                 INSERT INTO srm.audit_event
                     (actor_user_id, actor_type, action_code, entity_type, entity_id, supplier_id,
                      outcome, reason, changed_fields)
-                VALUES (?, 'SUPPLIER_VERIFIER', ?, 'SUPPLIER_DOCUMENT', ?, ?, 'SUCCESS', ?,
-                        jsonb_build_object('review_status', ?))
-                """, actorId, "SUPPLIER_DOCUMENT_" + status, documentId, supplierId, remarks, status);
+                VALUES (?, CASE
+                            WHEN EXISTS (SELECT 1 FROM srm.user_role ur JOIN srm.role r ON r.role_id = ur.role_id
+                                         WHERE ur.user_id = ? AND r.role_code = 'SRM_ADMIN')
+                            THEN 'SRM_ADMIN' ELSE 'SUPPLIER_VERIFIER' END,
+                        ?, 'SUPPLIER_DOCUMENT', ?, ?, 'SUCCESS', ?, jsonb_build_object('review_status', ?))
+                """, actorId, actorId, "SUPPLIER_DOCUMENT_" + status, documentId, supplierId, remarks, status);
         return findOne(supplierId, documentId);
     }
 
@@ -122,6 +150,23 @@ public class SupplierDocumentService {
                        version_number, review_status, expiry_date, review_remarks, uploaded_at, reviewed_at
                 FROM srm.supplier_document WHERE supplier_id = ? AND document_id = ?
                 """, this::map, supplierId, documentId);
+    }
+
+    private void requireActiveSupplierMembership(UUID supplierId, UUID userId) {
+        if (!hasActiveSupplierMembership(supplierId, userId)) {
+            throw new ResponseStatusException(NOT_FOUND, "Supplier not found");
+        }
+    }
+
+    private boolean hasActiveSupplierMembership(UUID supplierId, UUID userId) {
+        Boolean active = jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM srm.supplier_user_membership m
+                    JOIN srm.supplier_organization s ON s.supplier_id = m.supplier_id
+                    WHERE m.supplier_id = ? AND m.user_id = ? AND m.membership_status = 'ACTIVE'
+                      AND s.lifecycle_status NOT IN ('SUSPENDED', 'INACTIVE', 'REJECTED'))
+                """, Boolean.class, supplierId, userId);
+        return Boolean.TRUE.equals(active);
     }
 
     private void ensureSupplierExists(UUID supplierId) {
