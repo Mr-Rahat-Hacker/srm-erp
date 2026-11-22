@@ -20,12 +20,28 @@ export class AuditComponent implements OnInit {
   actorUserId = '';
   from = '';
   to = '';
+  page = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
   loading = false;
   error = '';
 
-  ngOnInit(): void { this.search(); }
+  ngOnInit(): void { this.loadPage(); }
 
   search(): void {
+    this.page = 0;
+    this.loadPage();
+  }
+
+  changePage(delta: number): void {
+    const next = this.page + delta;
+    if (next < 0 || next >= this.totalPages || this.loading) return;
+    this.page = next;
+    this.loadPage();
+  }
+
+  private loadPage(): void {
     this.loading = true;
     this.error = '';
     const filters = {
@@ -35,10 +51,16 @@ export class AuditComponent implements OnInit {
       actorUserId: this.actorUserId.trim() || undefined,
       from: this.from ? new Date(this.from).toISOString() : undefined,
       to: this.to ? new Date(this.to).toISOString() : undefined,
-      limit: 100,
+      page: this.page,
+      size: this.pageSize,
     };
     this.audit.search(filters).subscribe({
-      next: (response) => { this.events = response.data ?? []; this.loading = false; },
+      next: (response) => {
+        this.events = response.data?.items ?? [];
+        this.totalElements = response.data?.totalElements ?? 0;
+        this.totalPages = response.data?.totalPages ?? 0;
+        this.loading = false;
+      },
       error: (error: HttpErrorResponse) => {
         this.error = error.error?.message ?? 'Unable to retrieve audit events.';
         this.loading = false;
