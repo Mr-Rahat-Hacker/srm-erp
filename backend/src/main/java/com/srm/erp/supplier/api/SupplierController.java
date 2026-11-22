@@ -23,6 +23,7 @@ public class SupplierController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPPLIER_VERIFIER','SRM_ADMIN','SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<SupplierResponse> register(@Valid @RequestBody SupplierRegistrationRequest request) {
         return ApiResponse.success("Supplier registered successfully", supplierService.register(request));
