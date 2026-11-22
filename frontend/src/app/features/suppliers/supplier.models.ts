@@ -80,6 +80,14 @@ export interface SupplierDocument {
   reviewedAt: string | null;
 }
 
+export interface PageData<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
