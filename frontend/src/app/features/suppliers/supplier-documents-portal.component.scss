@@ -7,11 +7,21 @@ h1 { margin:8px 0 5px; color:#17263b; font-size:clamp(27px,3vw,36px); letter-spa
 .profile-select select { min-height:36px; padding:7px 9px; border:1px solid #dfe6ed; border-radius:6px; background:#fff; color:#30465e; font:inherit; }
 .notice,.empty-state { margin-bottom:12px; padding:14px; border:1px solid #e6ebf1; border-radius:8px; background:#fff; color:#78889b; font-size:11px; }
 .notice.error { border-color:#f0d4d2; background:#fff1f0; color:#a13d36; }
-
 .notice.success { border-color:#cbe7d4; background:#edf8f1; color:#267447; }
 .profile-status { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; padding:13px; border:1px solid #e6ebf1; border-radius:8px; background:#fff; }
 .profile-status span,.profile-status strong { display:block; }
 .profile-status span { color:#8795a5; font-size:9px; }
 .profile-status strong { margin-top:4px; color:#30465e; font-size:12px; }
-.profile-status button { min-height:36px; padding:0 12px; border:0; border-radius:6px; background:#183b5d; color:#fff; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
-.profile-status button:disabled { opacity:.55; cursor:not-allowed; }
+.profile-status button,.save-profile { min-height:36px; padding:0 12px; border:0; border-radius:6px; background:#183b5d; color:#fff; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
+.profile-status button:disabled,.save-profile:disabled { opacity:.55; cursor:not-allowed; }
+.locked-note { margin-left:auto; color:#75859a!important; font-size:10px!important; }
+.profile-editor { margin-bottom:16px; padding:18px; border:1px solid #e6ebf1; border-radius:9px; background:#fff; }
+.section-heading { margin-bottom:14px; }
+.section-heading h2 { margin:0 0 4px; color:#26384d; font-size:15px; }
+.section-heading p { margin:0; color:#7b899b; font-size:10px; }
+.profile-form-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.profile-form-grid label { display:grid; gap:6px; color:#53657a; font-size:10px; font-weight:700; }
+.profile-form-grid input { box-sizing:border-box; width:100%; min-height:38px; padding:8px 10px; border:1px solid #d9e2eb; border-radius:6px; font:inherit; font-size:11px; }
+.profile-form-grid input:disabled { background:#f3f6f8; color:#8190a1; }
+.save-profile { margin-top:15px; }
+@media (max-width:760px) { .profile-form-grid { grid-template-columns:1fr; } .profile-editor { padding:14px; } }
