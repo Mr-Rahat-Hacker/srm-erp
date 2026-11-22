@@ -34,14 +34,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String token = header.substring(7);
                 var userId = jwtService.extractUserId(token);
-                List<String> activeUsers = jdbc.query("""
-                        SELECT account_status FROM srm.app_user
-                        WHERE user_id = ? AND account_status = 'ACTIVE'
-                        """, (rs, row) -> rs.getString(1), userId);
-                if (activeUsers.isEmpty()) {
+                List<String> currentRoles = jdbc.query("""
+                        SELECT r.role_code
+                        FROM srm.app_user u
+                        JOIN srm.user_role ur ON ur.user_id = u.user_id
+                        JOIN srm.role r ON r.role_id = ur.role_id
+                        WHERE u.user_id = ? AND u.account_status = 'ACTIVE'
+                        ORDER BY r.role_code
+                        """, (rs, row) -> rs.getString("role_code"), userId);
+                if (currentRoles.isEmpty()) {
                     SecurityContextHolder.clearContext();
                 } else {
-                    List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(token).stream()
+                    List<SimpleGrantedAuthority> authorities = currentRoles.stream()
                             .map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList();
                     var authentication = new UsernamePasswordAuthenticationToken(
                             userId.toString(), null, authorities);
