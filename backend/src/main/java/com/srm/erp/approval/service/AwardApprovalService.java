@@ -141,8 +141,11 @@ public class AwardApprovalService {
                 CROSS JOIN (VALUES ('IN_APP'), ('EMAIL')) AS channels(channel)
                 WHERE r.rfq_id = ?
                 """, firstApproverId, rfqId);
+        String routeSummary = "recommendation=" + recommendation.id()
+                + "; approver_sequence=" + approverIds.stream().map(UUID::toString)
+                .reduce((first, next) -> first + " -> " + next).orElse("");
         audit(buyerId, "AWARD_APPROVAL_REQUESTED", "APPROVAL_REQUEST", approvalRequestId,
-                rfqId, "SUCCESS", recommendation.id().toString());
+                rfqId, "SUCCESS", routeSummary);
         return new ApprovalTaskRecord(approvalRequestId, firstTaskId, rfqId, null, null,
                 recommendation.id(), recommendation.supplierId(), recommendation.supplierNumber(),
                 recommendation.supplierName(), recommendation.versionId(), recommendation.versionNumber(),
