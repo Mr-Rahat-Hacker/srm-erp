@@ -4,7 +4,6 @@ import com.srm.erp.platform.response.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -54,11 +53,12 @@ public class AuthController {
         if (roles.isEmpty()) throw new ResponseStatusException(UNAUTHORIZED, "No active role assigned to this account");
         String token = jwtService.generateToken(user.id(), user.email(), roles);
         return ApiResponse.success("Login successful",
-                new LoginResponse(token, "Bearer", 3600, user.id(), user.email(), user.fullName(), roles));
+                new LoginResponse(token, "Bearer", jwtService.expirationSeconds(),
+                        user.id(), user.email(), user.fullName(), roles));
     }
 
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
     public record LoginResponse(String accessToken, String tokenType, long expiresIn,
                                 UUID userId, String email, String fullName, List<String> roles) {}
-    private record UserRow(UUID id, String email, String passwordHash, String fullName, String status) {}
+    record UserRow(UUID id, String email, String passwordHash, String fullName, String status) {}
 }
