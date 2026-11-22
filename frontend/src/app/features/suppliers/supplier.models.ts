@@ -17,6 +17,21 @@ export interface SupplierAccountRegistration extends SupplierRegistration {
   password: string;
 }
 
+export interface SupplierProfileUpdate {
+  legalName?: string;
+  tradeName?: string;
+  gstin?: string;
+  pan?: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
+  city?: string;
+  stateRegion?: string;
+  postalCode?: string;
+  countryCode?: string;
+}
+
 export interface Supplier {
   supplierId: string;
   supplierNumber: string;
